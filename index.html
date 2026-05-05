@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#ff2d2d">
+<title>SunBrother 貼紙廣告生圖系統</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #060606;
+  color: #e0e0e0;
+  min-height: 100vh;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.header {
+  border-bottom: 3px solid #ff2d2d;
+  padding: 28px 20px 22px;
+  text-align: center;
+  background: linear-gradient(180deg, #1a0a0a 0%, #060606 100%);
+}
+.badge {
+  display: inline-block;
+  padding: 5px 18px;
+  background: #ff2d2d;
+  border-radius: 4px;
+  font-size: 10px;
+  letter-spacing: 5px;
+  color: #fff;
+  font-weight: 900;
+  margin-bottom: 14px;
+}
+.header h1 {
+  font-size: 22px;
+  font-weight: 900;
+  margin: 0 0 8px;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+.header p {
+  font-size: 13px;
+  color: #aa6666;
+  margin: 0;
+  line-height: 1.6;
+  font-weight: 600;
+}
+.notice {
+  margin: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #1a0a1a 0%, #0d050d 100%);
+  border: 2px solid #a855f7;
+  border-radius: 12px;
+}
+.notice-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #c084fc;
+  margin-bottom: 10px;
+  letter-spacing: 2px;
+}
+.notice-content {
+  font-size: 13px;
+  color: #d4b4f4;
+  line-height: 1.85;
+}
+.notice-content div { margin-bottom: 6px; }
+.notice-content strong.red { color: #ff8888; }
+.notice-content strong.green { color: #88ff88; }
+.notice-content .indent { margin-left: 8px; margin-bottom: 3px; }
+
+.section { padding: 0 16px; }
+.section-title {
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: #ff2d2d;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+.section-title.fix { color: #f59e0b; margin-bottom: 14px; }
+
+.type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.color-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.option-card {
+  padding: 16px 12px;
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+.option-card.active {
+  background: #1a0a0a;
+  border: 2px solid #ff2d2d;
+}
+.option-card .emoji { font-size: 24px; margin-bottom: 6px; }
+.option-card .label { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 3px; }
+.option-card .desc { font-size: 11px; color: #777; }
+.color-card { padding: 12px 8px; }
+.color-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  margin: 0 auto 6px;
+  border: 1px solid #444;
+}
+.color-card .label { font-size: 13px; }
+.color-card .desc { font-size: 10px; color: #666; margin-top: 2px; }
+
+.usage-tip {
+  margin: 0 16px 16px;
+  padding: 14px 16px;
+  background: #0d0d0d;
+  border: 1px solid #222;
+  border-radius: 10px;
+}
+.usage-tip-content {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.7;
+}
+.usage-tip-content strong { color: #fff; }
+
+.prompt-card {
+  background: #0a0a0a;
+  border: 1px solid #161616;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: border 0.2s;
+}
+.prompt-card.active { border: 1px solid #ff2d2d; }
+.prompt-header {
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.prompt-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+.prompt-emoji { font-size: 22px; }
+.prompt-name { font-size: 15px; font-weight: 800; color: #fff; }
+.prompt-hook { font-size: 11px; color: #88aacc; margin-top: 3px; }
+.toggle-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #161616;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #fff;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.prompt-card.active .toggle-btn { background: #ff2d2d; }
+
+.prompt-body {
+  padding: 0 16px 16px;
+  display: none;
+}
+.prompt-card.active .prompt-body { display: block; }
+.prompt-text {
+  background: #050505;
+  border: 1px solid #1a1a1a;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 11.5px;
+  color: #888;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0 0 12px;
+  user-select: text;
+  -webkit-user-select: text;
+  font-family: inherit;
+}
+
+.fix-card {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 8px;
+}
+.fix-card.highlight { border: 1px solid #a855f7; }
+.fix-title { font-size: 14px; font-weight: 800; color: #ddd; margin-bottom: 4px; }
+.fix-card.highlight .fix-title { color: #c084fc; }
+.fix-desc { font-size: 12px; color: #666; margin: 0 0 10px; }
+.fix-text {
+  background: #050505;
+  border: 1px solid #1a1a1a;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: #777;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0 0 10px;
+  user-select: text;
+  -webkit-user-select: text;
+  font-family: inherit;
+}
+
+.copy-btn {
+  width: 100%;
+  padding: 14px;
+  background: #ff2d2d;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.copy-btn:active { transform: scale(0.98); }
+.copy-btn.copied { background: #1a7a1a; }
+.copy-btn.error { background: #7a1a1a; }
+
+.fix-section { padding: 24px 16px 16px; }
+
+.footer {
+  border-top: 1px solid #111;
+  padding: 20px;
+  text-align: center;
+  margin-top: 24px;
+}
+.footer-text {
+  font-size: 10px;
+  color: #282828;
+  letter-spacing: 3px;
+  font-weight: 700;
+}
+.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="badge">SUNBROTHER 內部工具</div>
+  <h1>貼紙廣告生圖系統</h1>
+  <p>v7 ・ 內建銳利化指令 ・ HTML 版</p>
+</div>
+
+<div class="notice">
+  <div class="notice-title">🔪 v7 銳利化升級</div>
+  <div class="notice-content">
+    <div><strong class="red">過去問題：</strong>AI 生圖天生糊糊的（diffusion model 物理限制）</div>
+    <div><strong class="green">v7 雙道防線：</strong></div>
+    <div class="indent">1️⃣ 所有方案內建銳利化指令（自動執行）</div>
+    <div class="indent">2️⃣ 新增「🔪 圖片糊糊的」修正咒語（後補強化）</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">▎STEP 1：你的貼紙是哪一種？</div>
+  <div class="type-grid">
+    <div class="option-card active" data-type="printed" onclick="selectType('printed')">
+      <div class="emoji">🎨</div>
+      <div class="label">彩色印刷</div>
+      <div class="desc">雙色或多色印刷貼紙</div>
+    </div>
+    <div class="option-card" data-type="cutting" onclick="selectType('cutting')">
+      <div class="emoji">✂️</div>
+      <div class="label">卡點西德割字</div>
+      <div class="desc">單色 vinyl 切割貼紙</div>
+    </div>
+  </div>
+</div>
+
+<div class="section hidden" id="step2">
+  <div class="section-title">▎STEP 2：割字是什麼顏色？</div>
+  <div class="color-grid">
+    <div class="option-card color-card active" data-color="white" onclick="selectColor('white')">
+      <div class="color-circle" style="background: #ffffff;"></div>
+      <div class="label">白色</div>
+      <div class="desc">WHT</div>
+    </div>
+    <div class="option-card color-card" data-color="black" onclick="selectColor('black')">
+      <div class="color-circle" style="background: #000000;"></div>
+      <div class="label">黑色</div>
+      <div class="desc">BLK</div>
+    </div>
+    <div class="option-card color-card" data-color="reflective" onclick="selectColor('reflective')">
+      <div class="color-circle" style="background: linear-gradient(135deg, #c0c0c0 0%, #ffffff 50%, #c0c0c0 100%);"></div>
+      <div class="label">3M 反光</div>
+      <div class="desc">3MR</div>
+    </div>
+  </div>
+</div>
+
+<div class="usage-tip">
+  <div class="usage-tip-content">
+    📌 <strong>使用流程：</strong>
+    上傳貼紙照片到 Gemini/ChatGPT → 選方案 → 複製 Prompt → 貼到 AI 對話框送出 → 不滿意時用「修正咒語」
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">▎方案列表（已內建銳利化）</div>
+  <div id="prompts-container"></div>
+</div>
+
+<div class="fix-section">
+  <div class="section-title fix">▎修正咒語（已根據選擇篩選）</div>
+  <div id="fixes-container"></div>
+</div>
+
+<div class="footer">
+  <div class="footer-text">SUNBROTHER STICKER AD GENERATOR × v7 SHARP × 2026</div>
+</div>
+
+<script>
+const SHARPNESS_BLOCK = `SHARPNESS REQUIREMENTS (CRITICAL — avoid AI's typical soft/blurry output):
+- The sticker must be TACK-SHARP — razor-crisp focus on the entire sticker surface
+- The vinyl/print edges should be knife-sharp, NO soft blur on the die-cut outline
+- All characters and text on the sticker should be perfectly readable with sharp clean edges
+- AVOID excessive shallow depth of field that blurs the sticker itself
+- Only the SURROUNDING car paint may have slight depth-of-field blur — NEVER the sticker
+- Use DEEP FOCUS on the sticker, shallow focus ONLY on far background
+- High micro-contrast on the sticker design
+- 8K resolution clarity, professional commercial photography sharpness
+- The sticker should look like a high-resolution DSLR macro shot, not AI-generated soft art`;
+
+const NEUTRAL_BODY_ZONES = `BODY ZONE RESTRICTION (CRITICAL):
+
+The shot must be framed on a NEUTRAL UNIDENTIFIABLE BODY AREA — pure sheet metal with NO car-defining features.
+
+✅ ACCEPTABLE BODY ZONES:
+- Mid-section of a car door (pure flat metal, door handle and edges NOT visible)
+- Mid-section of the rear quarter panel (between rear wheel arch and C-pillar — but neither visible)
+- Mid-section of the front fender (between front wheel arch and door — but neither visible)
+- The hood's middle section (away from grille and windshield)
+
+🚫 ABSOLUTELY FORBIDDEN ZONES:
+- ANYWHERE near a headlight or taillight
+- ANYWHERE near a grille, air intake, or front bumper details
+- A-pillar, B-pillar, C-pillar
+- License plate area
+- Side mirror area
+- Wheel hub or rim area
+- Windshield, side window, glass
+- Door handle
+- Logo or badge
+
+CAMERA FRAMING:
+- Frame TIGHT enough that no identifiable car parts enter the frame
+- Show ONLY pure painted sheet metal
+- IMPOSSIBLE to identify the car make or model from this image`;
+
+const SAFE_PLACEMENT_RULES = `STICKER PLACEMENT (ABSOLUTE):
+- NEVER cross a panel gap, door seam, or body line
+- The sticker MUST sit entirely on ONE continuous panel
+- At least sticker's own width away from any panel gap
+- Clean paint margin on all four sides`;
+
+const SIZE_BENCHMARK = `STICKER SIZE:
+- Palm-sized in real life (about 8-10 cm wide)
+- A license plate would be 4x WIDER than this sticker
+- A door handle would be 2x WIDER than this sticker
+- In the image: occupies about 18-22% of the frame
+- A SMALL ACCENT, not a graphic feature`;
+
+const PRINTED_PROMPTS = [
+  {
+    id: "printed-black",
+    name: "黑車平衡極簡版（首選）",
+    emoji: "⚫",
+    hook: "純淨極簡風,已驗證可上廣告",
+    prompt: `Look at my uploaded reference image. This is a FULL-COLOR PRINTED car decal with multiple printed colors.
+
+TASK: Generate a 1:1 square minimal product photo in the style of premium sticker brand editorial photography. Calm, clean, but with clear automotive context.
+
+THE STICKER:
+- Reproduce the design exactly: same shape, same multi-color combination, same text
+- Real-world size: about 10 cm tall (palm-sized)
+- In the frame: 22-25% of image height
+- Position: rule of thirds, slightly off-center
+
+ULTRA-THIN STICKER (CRITICAL):
+- NO visible thickness, NO drop shadow, NO 3D edge
+- Flat against the car paint, like a tattoo on skin
+
+${SHARPNESS_BLOCK}
+
+THE CAR:
+- Glossy BLACK car paint (deep, premium, with subtle metallic flake)
+- Show ONE subtle body line / panel crease across the frame (faint, low-key)
+- Premium automotive finish with depth and sheen
+- Faint soft environmental reflections in the glossy paint
+- Gentle gradient: slightly brighter top, darker bottom
+
+WHAT NOT TO INCLUDE:
+- NO taillights, headlights, license plates, door handles, wheels, windows
+- NO dramatic reflections or harsh highlights
+
+COMPOSITION (60-25-15):
+- 60% premium car paint with subtle details
+- 25% sticker (TACK-SHARP)
+- 15% breathing room
+
+CAMERA: 85mm lens, slight 3/4 angle, deep focus on sticker, shallow depth of field only on far background
+
+LIGHTING: Soft diffused light from above, calm editorial illumination
+
+Style: Travel Safely brand product photo — minimal, premium, clearly automotive, RAZOR-SHARP detail.`
+  },
+  {
+    id: "printed-white",
+    name: "白車平衡極簡版",
+    emoji: "⚪",
+    hook: "白車身 + 彩色貼紙的高級感",
+    prompt: `Look at my uploaded reference image. This is a FULL-COLOR PRINTED car decal with multiple printed colors.
+
+TASK: Generate a 1:1 square minimal product photo with clear automotive context.
+
+THE STICKER:
+- Reproduce the design exactly from my reference
+- Real-world size: about 10 cm tall
+- In the frame: 22-25% of image height
+- Position: rule of thirds, off-center
+
+ULTRA-THIN STICKER (CRITICAL):
+- NO thickness, NO drop shadow, NO 3D edge
+- Flat against the paint
+
+${SHARPNESS_BLOCK}
+
+THE CAR:
+- Glossy PEARL WHITE car paint (premium, with subtle warm undertones)
+- Show ONE subtle body line across the frame
+- Pearl finish depth, subtle sheen
+- Faint soft environmental reflections
+- Gentle gradient: cooler top, warmer bottom
+
+WHAT NOT TO INCLUDE:
+- NO taillights, headlights, license plates, door handles, wheels, windows
+
+COMPOSITION (60-25-15):
+- 60% pearl white paint with subtle details
+- 25% sticker (TACK-SHARP)
+- 15% breathing room
+
+CAMERA: 85mm lens, slight 3/4 angle, deep focus on sticker
+
+LIGHTING: Bright airy soft daylight, calm editorial mood
+
+Style: Travel Safely product photo — minimal, premium, clearly automotive, RAZOR-SHARP detail.`
+  }
+];
+
+const CUTTING_WHITE_PROMPTS = [
+  {
+    id: "cutting-white-3q",
+    name: "🅰️ 3/4 角度（v5 經典）",
+    emoji: "⚪",
+    hook: "穩定安全的攝影角度",
+    prompt: `Look at my uploaded reference image. This is a SINGLE-COLOR WHITE VINYL CUTTING STICKER — die-cut white vinyl with NO background, NO border, NO frame.
+
+TASK: Generate a 1:1 square realistic product photo on a NEUTRAL CAR BODY SURFACE.
+
+${NEUTRAL_BODY_ZONES}
+
+${SIZE_BENCHMARK}
+
+${SHARPNESS_BLOCK}
+
+THE STICKER:
+- Reproduce the design EXACTLY from my reference
+- WHITE vinyl only — negative space is EMPTY
+- NO background, NO border, NO frame
+- Slight matte finish, sharp die-cut edges
+
+ULTRA-THIN VINYL:
+- NO drop shadow, NO 3D lifted edge
+
+${SAFE_PLACEMENT_RULES}
+
+THE CAR:
+- Glossy BLACK car paint (deep, premium, with subtle metallic flake)
+- Frame shows ONLY a neutral body panel area
+- ZERO identifiable car parts in the frame
+
+CAMERA — 3/4 ANGLE:
+- 85mm lens, slight 3/4 angle from the side
+- Camera at door height, looking at the body panel naturally
+- DEEP FOCUS on the sticker (tack-sharp), shallow focus only on far background
+- Sticker takes about 18-22% of frame
+
+LIGHTING: Soft diffused light from above
+
+Style: JDM-inspired premium automotive product photo on abstract sheet metal, RAZOR-SHARP detail.`
+  },
+  {
+    id: "cutting-white-topdown",
+    name: "🅱️ 俯視角（鈑金漸層）",
+    emoji: "⬇️",
+    hook: "從上往下拍,展現車漆漸層",
+    prompt: `Look at my uploaded reference image. This is a SINGLE-COLOR WHITE VINYL CUTTING STICKER — die-cut white vinyl with NO background, NO border, NO frame.
+
+TASK: Generate a 1:1 square realistic product photo from a top-down angle on a NEUTRAL CAR BODY SURFACE.
+
+${NEUTRAL_BODY_ZONES}
+
+${SIZE_BENCHMARK}
+
+${SHARPNESS_BLOCK}
+
+THE STICKER:
+- Reproduce the design EXACTLY from my reference
+- WHITE vinyl only — negative space EMPTY
+- NO background, NO border, NO frame
+
+ULTRA-THIN VINYL:
+- NO drop shadow, NO 3D edge
+
+${SAFE_PLACEMENT_RULES}
+
+THE CAR:
+- Glossy BLACK car paint
+- Frame shows ONLY a neutral body panel area
+- ZERO identifiable car parts
+
+CAMERA — TOP-DOWN ANGLE:
+- 85mm lens, looking down at about 60-degree angle from above
+- Captures the curvature of the body panel as it rolls away from camera
+- The paint shows a beautiful dramatic gradient — bright at top, deep black at bottom
+- DEEP FOCUS on the sticker (tack-sharp)
+- Sticker takes about 18-22% of frame
+
+LIGHTING: Soft overhead light creates a strong gradient on the curved panel
+
+Style: Editorial automotive product photo with dramatic paint gradient, RAZOR-SHARP detail.`
+  },
+  {
+    id: "cutting-white-lowangle",
+    name: "🅲 仰角（戲劇感）",
+    emoji: "⬆️",
+    hook: "由下往上,氣勢感",
+    prompt: `Look at my uploaded reference image. This is a SINGLE-COLOR WHITE VINYL CUTTING STICKER — die-cut white vinyl with NO background, NO border, NO frame.
+
+TASK: Generate a 1:1 square realistic product photo from a low angle on a NEUTRAL CAR BODY SURFACE.
+
+${NEUTRAL_BODY_ZONES}
+
+${SIZE_BENCHMARK}
+
+${SHARPNESS_BLOCK}
+
+THE STICKER:
+- Reproduce the design EXACTLY from my reference
+- WHITE vinyl only — negative space EMPTY
+- NO background, NO border, NO frame
+
+ULTRA-THIN VINYL:
+- NO drop shadow, NO 3D edge
+
+${SAFE_PLACEMENT_RULES}
+
+THE CAR:
+- Glossy BLACK car paint
+- Frame shows ONLY a neutral body panel area
+- ZERO identifiable car parts
+
+CAMERA — LOW ANGLE:
+- 85mm lens, camera positioned LOW (knee height or lower), looking slightly UP at the body panel
+- Creates a sense of grandeur and presence
+- DEEP FOCUS on the sticker (tack-sharp)
+- Sticker takes about 18-22% of frame
+
+LIGHTING: Soft side light, slightly dramatic, creates depth on the curved panel
+
+Style: Premium automotive product photo with subtle low-angle drama, RAZOR-SHARP detail.`
+  },
+  {
+    id: "cutting-white-macro",
+    name: "🅳 微距特寫（細節質感）",
+    emoji: "🔍",
+    hook: "近距離拍攝,展現割字邊緣質感",
+    prompt: `Look at my uploaded reference image. This is a SINGLE-COLOR WHITE VINYL CUTTING STICKER — die-cut white vinyl with NO background, NO border, NO frame.
+
+TASK: Generate a 1:1 square macro detail product photo on a NEUTRAL CAR BODY SURFACE.
+
+${NEUTRAL_BODY_ZONES}
+
+${SHARPNESS_BLOCK}
+
+THE STICKER:
+- Reproduce the design EXACTLY from my reference
+- WHITE vinyl only — negative space EMPTY
+- NO background, NO border, NO frame
+- Slight matte finish, RAZOR-SHARP die-cut edges (extra emphasis at this close range)
+
+ULTRA-THIN VINYL:
+- About 0.08mm thick
+- NO drop shadow, NO 3D edge
+- The clean precision of the die-cut edge is visible at this close range
+
+${SAFE_PLACEMENT_RULES}
+
+STICKER SIZE (macro framing):
+- Sticker fills about 30-40% of the frame at this close distance
+- Surrounding area is pure car paint
+- Detail/macro shot — much closer than other angles
+
+THE CAR:
+- Glossy BLACK car paint with visible premium texture (metallic flake, deep clear coat)
+- Frame shows ONLY pure neutral body panel area
+- ZERO identifiable car parts
+
+CAMERA — MACRO CLOSE-UP:
+- 100mm macro lens equivalent
+- DEEP FOCUS on the entire sticker (NOT shallow blur on the sticker — only on far background)
+- Slight 3/4 angle showing the vinyl sitting flat on the painted surface
+
+LIGHTING: Soft directional light, beautifully reveals paint texture and vinyl edge precision
+
+Style: Premium product macro photography — vinyl as a beautiful detail on luxurious paint, RAZOR-SHARP throughout.`
+  }
+];
+
+const CUTTING_BLACK_PROMPTS = [
+  {
+    id: "cutting-black-3q",
+    name: "🅰️ 3/4 角度（v5 經典）",
+    emoji: "⚫",
+    hook: "穩定安全的攝影角度",
+    prompt: `Look at my uploaded reference image. This is a SINGLE-COLOR BLACK VINYL CUTTING STICKER — die-cut black vinyl with NO background, NO border, NO frame.
+
+TASK: Generate a 1:1 square realistic product photo on a NEUTRAL CAR BODY SURFACE.
+
+${NEUTRAL_BODY_ZONES}
+
+${SIZE_BENCHMARK}
+
+${SHARPNESS_BLOCK}
+
+THE STICKER:
+- Reproduce the design EXACTLY from my reference
+- BLACK vinyl only — negative space is EMPTY
+- NO background, NO border, NO frame
+
+${SAFE_PLACEMENT_RULES}
+
+THE CAR:
+- Glossy PEARL WHITE car paint
+- Frame shows ONLY a neutral body panel area
+- ZERO identifiable car parts
+
+CAMERA — 3/4 ANGLE:
+- 85mm lens, slight 3/4 angle from the side
+- DEEP FOCUS on the sticker (tack-sharp)
+- Sticker takes about 18-22% of frame
+
+LIGHTING: Bright airy soft daylight
+
+Style: Clean automotive product photo on abstract white sheet metal, RAZOR-SHARP detail.`
+  },
+  {
+    id: "cutting-black-topdown",
+    name: "🅱️ 俯視角（鈑金漸層）",
+    emoji: "⬇️",
+    hook: "從上往下拍,展現白漆漸層",
+    prompt: `Look at my uploaded reference image. This is a SINGLE-COLOR BLACK VINYL CUTTING STICKER — die-cut black vinyl with NO background, NO border, NO frame.
+
+TASK: Generate a 1:1 square realistic product photo from a top-down angle on a NEUTRAL CAR BODY SURFACE.
+
+${NEUTRAL_BODY_ZONES}
+
+${SIZE_BENCHMARK}
+
+${SHARPNESS_BLOCK}
+
+THE STICKER:
+- Reproduce the design EXACTLY from my reference
+- BLACK vinyl only — negative space EMPTY
+- NO background, NO border, NO frame
+
+${SAFE_PLACEMENT_RULES}
+
+THE CAR:
+- Glossy PEARL WHITE car paint
+- Frame shows ONLY a neutral body panel area
+- ZERO identifiable car parts
+
+CAMERA — TOP-DOWN ANGLE:
+- 85mm lens, looking down at about 60-degree angle from above
+- The pearl paint shows luminous gradient
+- DEEP FOCUS on the sticker (tack-sharp)
+- Sticker takes about 18-22% of frame
+
+LIGHTING: Soft overhead light creates a luminous gradient
+
+Style: Editorial automotive product photo with luminous pearl gradient, RAZOR-SHARP detail.`
+  },
+  {
+    id: "cutting-black-lowangle",
+    name: "🅲 仰角（戲劇感）",
+    emoji: "⬆️",
+    hook: "由下往上,氣勢感",
+    prompt: `Look at my uploaded reference image. This is a SINGLE-COLOR BLACK VINYL CUTTING STICKER — die-cut black vinyl with NO background, NO border, NO frame.
+
+TASK: Generate a 1:1 square realistic product photo from a low angle on a NEUTRAL CAR BODY SURFACE.
+
+${NEUTRAL_BODY_ZONES}
+
+${SIZE_BENCHMARK}
+
+${SHARPNESS_BLOCK}
+
+THE STICKER:
+- Reproduce the design EXACTLY from my reference
+- BLACK vinyl only — negative space EMPTY
+- NO background, NO border, NO frame
+
+${SAFE_PLACEMENT_RULES}
+
+THE CAR:
+- Glossy PEARL WHITE car paint
+- Frame shows ONLY a neutral body panel area
+- ZERO identifiable car parts
+
+CAMERA — LOW ANGLE:
+- 85mm lens, camera positioned LOW, looking slightly UP at the body panel
+- DEEP FOCUS on the sticker (tack-sharp)
+- Sticker takes about 18-22% of frame
+
+LIGHTING: Soft side light, gentle drama
+
+Style: Premium automotive product photo with subtle low-angle drama, RAZOR-SHARP detail.`
+  },
+  {
+    id: "cutting-black-macro",
+    name: "🅳 微距特寫（細節質感）",
+    emoji: "🔍",
+    hook: "近距離拍攝,展現割字邊緣質感",
+    prompt: `Look at my uploaded reference image. This is a SINGLE-COLOR BLACK VINYL CUTTING STICKER — die-cut black vinyl with NO background, NO border, NO frame.
+
+TASK: Generate a 1:1 square macro detail product photo on a NEUTRAL CAR BODY SURFACE.
+
+${NEUTRAL_BODY_ZONES}
+
+${SHARPNESS_BLOCK}
+
+THE STICKER:
+- Reproduce the design EXACTLY from my reference
+- BLACK vinyl only — negative space EMPTY
+- NO background, NO border, NO frame
+- Slight matte finish, RAZOR-SHARP die-cut edges
+
+ULTRA-THIN VINYL:
+- About 0.08mm thick
+- NO drop shadow, NO 3D edge
+
+${SAFE_PLACEMENT_RULES}
+
+STICKER SIZE (macro framing):
+- Sticker fills about 30-40% of the frame at this close distance
+
+THE CAR:
+- Glossy PEARL WHITE car paint with subtle pearl micro-detail
+- Frame shows ONLY pure neutral body panel area
+- ZERO identifiable car parts
+
+CAMERA — MACRO CLOSE-UP:
+- 100mm macro lens equivalent
+- DEEP FOCUS on entire sticker
+- Slight 3/4 angle
+
+LIGHTING: Soft directional light revealing paint texture and vinyl edge precision
+
+Style: Premium product macro photography on luxurious pearl paint, RAZOR-SHARP throughout.`
+  }
+];
+
+const CUTTING_REFLECTIVE_PROMPTS = [
+  {
+    id: "cutting-reflective-night",
+    name: "🌙 夜景發光（招牌方案）",
+    emoji: "✨",
+    hook: "夜間,展示反光特性",
+    prompt: `Look at my uploaded reference image. This is a 3M REFLECTIVE VINYL CUTTING STICKER — die-cut reflective vinyl that glows when light hits it. NO background, NO border, NO frame.
+
+TASK: Generate a 1:1 square realistic photo at night, on a NEUTRAL CAR BODY SURFACE.
+
+${NEUTRAL_BODY_ZONES}
+
+${SIZE_BENCHMARK}
+
+${SHARPNESS_BLOCK}
+
+THE STICKER:
+- Reproduce the design EXACTLY from my reference
+- REFLECTIVE VINYL only — negative space empty
+- NO background or border
+- Bright silver-white retro-reflective glow
+- Glow contained WITHIN sticker shape
+
+${SAFE_PLACEMENT_RULES}
+
+THE CAR:
+- Glossy BLACK car paint at night
+- Neutral body panel area only
+- ZERO identifiable car parts
+- Atmospheric night ambience
+
+CAMERA: 85mm lens, slight 3/4 angle, DEEP FOCUS on sticker
+- Sticker takes about 18-22% of frame
+
+LIGHTING: Subtle ambient night light, the vinyl glows brightly
+
+Style: Premium automotive night photography. Abstract dark metal with glowing accent, RAZOR-SHARP detail.`
+  },
+  {
+    id: "cutting-reflective-day",
+    name: "☀️ 日間銀光",
+    emoji: "💫",
+    hook: "白天,展示質感",
+    prompt: `Look at my uploaded reference image. This is a 3M REFLECTIVE VINYL CUTTING STICKER — die-cut reflective vinyl with subtle silver shimmer.
+
+TASK: Generate a 1:1 square realistic product photo in daylight, on a NEUTRAL CAR BODY SURFACE.
+
+${NEUTRAL_BODY_ZONES}
+
+${SIZE_BENCHMARK}
+
+${SHARPNESS_BLOCK}
+
+THE STICKER:
+- Reproduce the design EXACTLY from my reference
+- REFLECTIVE VINYL only — negative space empty
+- NO background or border
+- Silver-white pearlescent shimmer
+
+${SAFE_PLACEMENT_RULES}
+
+THE CAR:
+- Glossy BLACK car paint
+- Neutral body panel area only
+- ZERO identifiable car parts
+
+CAMERA: 85mm lens, slight 3/4 angle, DEEP FOCUS on sticker
+- Sticker takes about 18-22% of frame
+
+LIGHTING: Soft daylight, pearlescent shimmer on vinyl
+
+Style: Editorial automotive product photo, abstract metal background with reflective accent, RAZOR-SHARP detail.`
+  },
+  {
+    id: "cutting-reflective-topdown",
+    name: "⬇️ 俯視反光",
+    emoji: "🌟",
+    hook: "從上俯視,光線從不同角度打進反光面",
+    prompt: `Look at my uploaded reference image. This is a 3M REFLECTIVE VINYL CUTTING STICKER — die-cut reflective vinyl. NO background, NO border, NO frame.
+
+TASK: Generate a 1:1 square realistic photo from a top-down angle on a NEUTRAL CAR BODY SURFACE.
+
+${NEUTRAL_BODY_ZONES}
+
+${SIZE_BENCHMARK}
+
+${SHARPNESS_BLOCK}
+
+THE STICKER:
+- Reproduce the design EXACTLY from my reference
+- REFLECTIVE VINYL only — negative space empty
+- NO background or border
+- Silver-white reflective surface
+
+${SAFE_PLACEMENT_RULES}
+
+THE CAR:
+- Glossy BLACK car paint
+- Frame shows ONLY a neutral body panel area
+- ZERO identifiable car parts
+
+CAMERA — TOP-DOWN ANGLE:
+- 85mm lens, looking down at about 60-degree angle from above
+- The reflective vinyl catches overhead light dramatically
+- DEEP FOCUS on sticker
+- Sticker takes about 18-22% of frame
+
+LIGHTING: Strong overhead light hits the reflective vinyl at the perfect angle
+
+Style: Editorial automotive product photo demonstrating reflective property from above, RAZOR-SHARP detail.`
+  }
+];
+
+const PRINTED_FIX_PROMPTS = [
+  {
+    id: "blur-printed",
+    emoji: "🔪",
+    title: "🆕 圖片糊糊的、不夠銳利",
+    desc: "強制 AI 提升銳利度與細節",
+    highlight: true,
+    prompt: `The image looks soft, blurry, or low-resolution — this is a typical AI image generation problem. I need MAXIMUM SHARPNESS:
+- The sticker must be TACK-SHARP across its entire surface
+- The vinyl/printed edges must be knife-sharp, NO soft blur
+- All characters and text must be perfectly readable with crisp clean edges
+- Use DEEP FOCUS on the sticker, not shallow depth of field
+- High micro-contrast on the printed surface
+- Output must look like a HIGH-RESOLUTION DSLR macro photograph, NOT AI-generated soft art
+- Increase overall image sharpness and resolution
+Regenerate with these sharpness improvements.`
+  },
+  {
+    id: "too-empty-printed",
+    emoji: "🌫️",
+    title: "太空洞、不像車",
+    desc: "加回一點車的氛圍但保持極簡",
+    prompt: `The image is too empty — it looks like the sticker is on a blank wall. Add subtle automotive context: ONE faint body line crossing the frame, paint gradient (brighter top, darker bottom), faint out-of-focus environmental reflections. The car must clearly read as a CAR while staying minimal. Keep 60% paint with subtle details, 25% sticker, 15% breathing room. Regenerate.`
+  },
+  {
+    id: "thinner-printed",
+    emoji: "📄",
+    title: "貼紙太厚",
+    desc: "強制超薄無厚度",
+    prompt: `The sticker has visible thickness. Make it ULTRA THIN — no drop shadow, no 3D edge, no border highlight. Flat printed appearance like a tattoo on skin. Regenerate flat.`
+  },
+  {
+    id: "color-sticker-printed",
+    emoji: "🎨",
+    title: "貼紙又被改成單色",
+    desc: "提醒彩色印刷",
+    prompt: `You converted my sticker to a single color. My sticker has multiple distinct printed colors clearly visible in my reference. Look at my reference image again and regenerate with the exact multi-color design.`
+  }
+];
+
+const CUTTING_FIX_PROMPTS = [
+  {
+    id: "blur-cutting",
+    emoji: "🔪",
+    title: "🆕 圖片糊糊的、不夠銳利",
+    desc: "強制 AI 提升銳利度與細節",
+    highlight: true,
+    prompt: `The image looks soft, blurry, or low-resolution — this is a typical AI image generation problem. I need MAXIMUM SHARPNESS:
+- The sticker must be TACK-SHARP across its entire surface
+- The vinyl die-cut edges must be knife-sharp, NO soft blur on the outline
+- All characters and shapes must be perfectly readable with crisp clean edges
+- Use DEEP FOCUS on the sticker, not shallow depth of field
+- High micro-contrast on the vinyl surface
+- Output must look like a HIGH-RESOLUTION DSLR macro photograph, NOT AI-generated soft art
+- Increase overall image sharpness and resolution
+Regenerate with these sharpness improvements.`
+  },
+  {
+    id: "fake-parts",
+    emoji: "🔍",
+    title: "出現怪車燈/怪零件",
+    desc: "強制移除所有可辨識車身部件",
+    prompt: `CRITICAL ISSUE: The image contains a strange-looking car part (maybe a fake headlight, fake taillight, or unidentifiable shape) that AI invented. Remove ALL identifiable car parts from the frame — no headlights, no taillights, no grille, no air intake, no door handle, no mirror, no windshield, no wheel, no pillar. The frame should ONLY show pure flat sheet metal paint with the sticker on it. The image should be IMPOSSIBLE to identify as any specific car make or model — just abstract painted metal. Regenerate.`
+  },
+  {
+    id: "across-gap",
+    emoji: "🚫",
+    title: "貼紙跨在門縫上",
+    desc: "強制貼紙完全在一塊鈑金內",
+    prompt: `CRITICAL ERROR: The sticker is placed across a panel gap or door seam. The sticker MUST be placed entirely within ONE continuous body panel, with clean paint margin around all four sides. The sticker should be at least its own width away from any panel gap. Move to a clean area and regenerate.`
+  },
+  {
+    id: "too-big",
+    emoji: "📏",
+    title: "貼紙還是太大",
+    desc: "縮到手掌大小",
+    prompt: `The sticker is too large. The actual sticker is about palm-sized (8-10 cm wide) — a license plate is 4x wider, a door handle is 2x wider. The sticker should occupy only 18-22% of the frame. Make smaller and regenerate.`
+  },
+  {
+    id: "floating",
+    emoji: "🎈",
+    title: "貼紙看起來浮在空中",
+    desc: "強制加入鈑金錨點",
+    prompt: `The sticker looks floating. Add ONE subtle depth indicator: a faint body crease running along ONE edge of the frame, OR a subtle paint curvature gradient. CRITICAL: do NOT add identifiable car parts. Just abstract surface depth. Regenerate.`
+  },
+  {
+    id: "wrong-bg",
+    emoji: "🎯",
+    title: "卡點割字被加了背景框",
+    desc: "強制移除背景,純割字",
+    prompt: `The sticker is wrong — you added a printed background or colored border. This is a CUTTING STICKER (die-cut vinyl) — NO background panel, NO border, NO frame. Only the letters/shapes themselves are vinyl. The car paint must be visible through all the negative space. Regenerate with pure die-cut vinyl only.`
+  },
+  {
+    id: "wrong-color",
+    emoji: "🎨",
+    title: "卡點割字顏色錯誤",
+    desc: "提醒單色純割字",
+    prompt: `The sticker color is wrong. SINGLE-COLOR vinyl — ONE color only (white OR black OR reflective silver). Match my reference exactly.`
+  },
+  {
+    id: "wrong-paint",
+    emoji: "✨",
+    title: "車漆質感不對(消光/磨砂)",
+    desc: "強制改成光面車漆",
+    prompt: `The car paint looks matte or rough. I need GLOSSY premium automotive paint with deep mirror-like sheen, smooth surface, subtle metallic flake. Regenerate with glossy automotive finish.`
+  },
+  {
+    id: "thinner-cutting",
+    emoji: "📄",
+    title: "貼紙太厚",
+    desc: "強制超薄無厚度",
+    prompt: `The sticker has visible thickness. Make it ULTRA THIN — no drop shadow, no 3D edge. Flat printed appearance like a tattoo on skin. Regenerate flat.`
+  }
+];
+
+let currentType = "printed";
+let currentColor = "white";
+let activePromptId = null;
+
+function selectType(type) {
+  currentType = type;
+  activePromptId = null;
+  document.querySelectorAll('[data-type]').forEach(el => {
+    el.classList.toggle('active', el.dataset.type === type);
+  });
+  document.getElementById('step2').classList.toggle('hidden', type !== 'cutting');
+  render();
+}
+
+function selectColor(color) {
+  currentColor = color;
+  activePromptId = null;
+  document.querySelectorAll('[data-color]').forEach(el => {
+    el.classList.toggle('active', el.dataset.color === color);
+  });
+  render();
+}
+
+function getCurrentPrompts() {
+  if (currentType === "printed") return PRINTED_PROMPTS;
+  if (currentColor === "white") return CUTTING_WHITE_PROMPTS;
+  if (currentColor === "black") return CUTTING_BLACK_PROMPTS;
+  if (currentColor === "reflective") return CUTTING_REFLECTIVE_PROMPTS;
+  return [];
+}
+
+function getCurrentFixes() {
+  return currentType === "printed" ? PRINTED_FIX_PROMPTS : CUTTING_FIX_PROMPTS;
+}
+
+function togglePrompt(id) {
+  activePromptId = activePromptId === id ? null : id;
+  render();
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function copyText(text, btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+
+  const doFallback = () => {
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.top = "0";
+      textarea.style.left = "0";
+      textarea.style.width = "1px";
+      textarea.style.height = "1px";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const success = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      return success;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const showCopied = () => {
+    btn.textContent = "✓ 已複製到剪貼簿！";
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = btn.dataset.label;
+      btn.classList.remove('copied');
+    }, 2500);
+  };
+
+  const showError = () => {
+    btn.textContent = "✗ 複製失敗，請手動選取";
+    btn.classList.add('error');
+    setTimeout(() => {
+      btn.textContent = btn.dataset.label;
+      btn.classList.remove('error');
+    }, 3000);
+  };
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(showCopied).catch(() => {
+      doFallback() ? showCopied() : showError();
+    });
+  } else {
+    doFallback() ? showCopied() : showError();
+  }
+}
+
+function render() {
+  // Render prompts
+  const prompts = getCurrentPrompts();
+  const promptsHtml = prompts.map(p => {
+    const isActive = activePromptId === p.id;
+    const btnId = `btn-${p.id}`;
+    return `
+      <div class="prompt-card ${isActive ? 'active' : ''}">
+        <div class="prompt-header" onclick="togglePrompt('${p.id}')">
+          <div class="prompt-header-left">
+            <span class="prompt-emoji">${p.emoji}</span>
+            <div>
+              <div class="prompt-name">${escapeHtml(p.name)}</div>
+              <div class="prompt-hook">${escapeHtml(p.hook)}</div>
+            </div>
+          </div>
+          <div class="toggle-btn">${isActive ? '−' : '+'}</div>
+        </div>
+        <div class="prompt-body">
+          <pre class="prompt-text">${escapeHtml(p.prompt)}</pre>
+          <button id="${btnId}" class="copy-btn" data-label="複製 Prompt"
+            onclick="event.stopPropagation(); copyText(window.__prompts['${p.id}'], '${btnId}')">複製 Prompt</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('prompts-container').innerHTML = promptsHtml;
+
+  // Store prompts in window for button access
+  window.__prompts = {};
+  prompts.forEach(p => { window.__prompts[p.id] = p.prompt; });
+
+  // Render fixes
+  const fixes = getCurrentFixes();
+  const fixesHtml = fixes.map(f => {
+    const btnId = `fixbtn-${f.id}`;
+    window.__prompts[f.id] = f.prompt;
+    return `
+      <div class="fix-card ${f.highlight ? 'highlight' : ''}">
+        <div class="fix-title">${f.emoji} ${escapeHtml(f.title)}</div>
+        <p class="fix-desc">${escapeHtml(f.desc)}</p>
+        <pre class="fix-text">${escapeHtml(f.prompt)}</pre>
+        <button id="${btnId}" class="copy-btn" data-label="複製"
+          onclick="copyText(window.__prompts['${f.id}'], '${btnId}')">複製</button>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('fixes-container').innerHTML = fixesHtml;
+}
+
+// Initial render
+render();
+</script>
+
+</body>
+</html>

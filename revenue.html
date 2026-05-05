@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SunBrother 營收統計儀表板</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0a;color:#e8e8e8;font-family:"Noto Sans TC",sans-serif;padding:24px;max-width:1400px;margin:0 auto}
+h1{color:#ff3c00;letter-spacing:2px;margin-bottom:4px}
+.sub{color:#555;font-size:.85rem;margin-bottom:18px}
+
+.tabs{display:flex;border-bottom:2px solid #2a2a2a;margin-bottom:18px;overflow-x:auto}
+.tab{padding:11px 18px;cursor:pointer;color:#555;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:.9rem;letter-spacing:1px;white-space:nowrap}
+.tab.on{color:#ff3c00;border-bottom-color:#ff3c00}
+.pg{display:none}.pg.on{display:block}
+
+.box{background:#111;border:1px solid #2a2a2a;border-radius:4px;padding:18px;margin-bottom:14px}
+h2{color:#888;font-size:.9rem;letter-spacing:2px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+h2 small{color:#555;font-size:.7rem;letter-spacing:0;font-weight:normal}
+
+.up-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:12px}
+.up-block{background:#1a1a1a;border:1px solid #333;border-radius:4px;padding:12px}
+.pt{font-size:1rem;font-weight:bold;letter-spacing:2px;margin-bottom:8px}
+.pt-sf{color:#96bf48}.pt-sp{color:#ee4d2d}.pt-mo{color:#ff5c8a}.pt-pk{color:#3eb6c4}
+input[type=file]{display:block;color:#e8e8e8;margin:6px 0;width:100%;cursor:pointer;font-size:.8rem}
+.msg{font-family:monospace;font-size:.75rem;padding:4px 7px;border-radius:3px;margin-top:5px;background:#0a0a0a;color:#555;min-height:22px}
+.msg.ok{color:#00e87a}.msg.er{color:#ff3c00}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:linear-gradient(135deg,#111 0%,#1a1a1a 100%);border:1px solid #2a2a2a;border-radius:6px;padding:18px;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;top:0;left:0;width:3px;height:100%;background:#ff3c00}
+.kpi.k-net::before{background:#00e87a}
+.kpi.k-fee::before{background:#ffd700}
+.kpi.k-ord::before{background:#3b82f6}
+.kpi.k-avg::before{background:#a78bfa}
+.kpi-lbl{font-size:.7rem;color:#888;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.kpi-val{font-family:"JetBrains Mono",monospace;font-size:1.7rem;font-weight:bold;color:#fff;line-height:1}
+.kpi-sub{font-size:.7rem;color:#555;margin-top:4px;font-family:monospace}
+
+.flt{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.flt label{font-size:.7rem;color:#555;letter-spacing:1px;text-transform:uppercase}
+select,input[type=month],input[type=date],input[type=number],input[type=text]{
+  background:#1a1a1a;border:1px solid #333;color:#e8e8e8;padding:7px 11px;border-radius:3px;
+  font-family:monospace;font-size:.85rem;
+}
+select:focus,input:focus{outline:none;border-color:#ff3c00}
+
+.platform-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:18px}
+.pcard{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:4px;padding:12px;cursor:pointer;transition:border-color .15s}
+.pcard:hover{border-color:#ff3c00}
+.pcard.on{border-color:#ff3c00;background:rgba(255,60,0,.07)}
+.pcard-name{font-weight:bold;font-size:.95rem;letter-spacing:1px;margin-bottom:5px}
+.pcard-amt{font-family:monospace;font-size:1.2rem;font-weight:bold;color:#00e87a;margin-bottom:3px}
+.pcard-meta{font-size:.7rem;color:#555;font-family:monospace}
+
+.chart-row{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:900px){.chart-row{grid-template-columns:1fr}}
+.chart-box{background:#111;border:1px solid #2a2a2a;border-radius:4px;padding:14px;height:300px}
+.chart-box h3{color:#888;font-size:.8rem;letter-spacing:1px;margin-bottom:8px}
+.chart-wrap{height:240px;position:relative}
+
+.tw{overflow-x:auto;max-height:500px;overflow-y:auto}
+table{width:100%;font-size:.78rem;font-family:monospace;border-collapse:collapse}
+thead{position:sticky;top:0;background:#111;z-index:1}
+th{text-align:left;color:#888;padding:7px 9px;border-bottom:1px solid #2a2a2a;white-space:nowrap;font-weight:normal;font-size:.72rem;letter-spacing:1px}
+td{padding:6px 9px;border-bottom:1px solid rgba(42,42,42,.5);color:#e8e8e8;vertical-align:top;white-space:nowrap}
+tr:hover td{background:rgba(255,255,255,.02)}
+td.amt{color:#00e87a;text-align:right}
+td.fee{color:#ffd700;text-align:right}
+td.net{color:#00e87a;font-weight:bold;text-align:right}
+td.tag-sf{color:#96bf48}td.tag-sp{color:#ee4d2d}td.tag-mo{color:#ff5c8a}td.tag-pk{color:#3eb6c4}td.tag-mn{color:#a78bfa}
+
+.btn{background:#ff3c00;color:#fff;border:none;padding:9px 16px;font-size:.85rem;cursor:pointer;border-radius:3px;letter-spacing:1px}
+.btn:hover{background:#ff8c00}
+.btn-out{background:#1a1a1a;border:1px solid #ff3c00;color:#ff3c00;padding:6px 14px;font-size:.85rem;cursor:pointer;border-radius:3px}.btn-out:hover{background:#ff3c00;color:#fff}
+.btn-bl{background:#1a1a1a;border:1px solid #3b82f6;color:#3b82f6;padding:6px 14px;font-size:.85rem;cursor:pointer;border-radius:3px}.btn-bl:hover{background:#3b82f6;color:#fff}
+.btn-gn{background:#1a1a1a;border:1px solid #00e87a;color:#00e87a;padding:6px 14px;font-size:.85rem;cursor:pointer;border-radius:3px}.btn-gn:hover{background:#00e87a;color:#000}
+.btn-r{background:#1a1a1a;border:1px solid #ff3c00;color:#ff3c00;padding:3px 8px;font-size:.7rem;cursor:pointer;border-radius:2px}
+
+.note{background:#1a1a1a;border:1px solid #ffd700;border-radius:4px;padding:10px 14px;font-size:.75rem;color:#ffd700;margin-bottom:14px;line-height:1.6}
+.empty{padding:60px 20px;text-align:center;color:#555;font-size:.9rem}
+
+#manual-form{background:#1a1a1a;border:1px solid #333;border-radius:4px;padding:14px;margin-bottom:12px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px}
+.form-grid label{display:flex;flex-direction:column;font-size:.7rem;color:#555;letter-spacing:1px}
+.form-grid input,.form-grid select{margin-top:4px}
+</style>
+</head>
+<body>
+
+<h1>SunBrother 營收統計儀表板</h1>
+<div class="sub">v1.0 — 多平台彙總 / 即時計算 / 手動單管理</div>
+
+<div class="tabs">
+  <div class="tab on" id="tab-up" onclick="goTab('up')">資料上傳</div>
+  <div class="tab" id="tab-dash" onclick="goTab('dash')">營收儀表板</div>
+  <div class="tab" id="tab-detail" onclick="goTab('detail')">訂單明細</div>
+  <div class="tab" id="tab-manual" onclick="goTab('manual')">手動單管理</div>
+</div>
+
+<!-- 上傳頁 -->
+<div class="pg on" id="pg-up">
+
+<div class="note">
+  <b>支援平台：</b>蝦皮 / Shopify 官網 / MO店+ / PINKOI / LINE+其他（手動）<br>
+  上傳訂單檔案後切到「營收儀表板」查看統計。手動單請到「手動單管理」新增（資料儲存於瀏覽器）。
+</div>
+
+<div class="box">
+  <h2>上傳各平台訂單檔案 <small>都是非必要，可只上傳有的</small></h2>
+  <div class="up-grid">
+    <div class="up-block">
+      <div class="pt pt-sp">SHOPEE 蝦皮</div>
+      <input type="file" id="f-sp" accept=".xlsx,.xls" multiple>
+      <div class="msg" id="msg-sp">等待上傳（可多選）</div>
+    </div>
+    <div class="up-block">
+      <div class="pt pt-sf">SHOPIFY 官網</div>
+      <input type="file" id="f-sf" accept=".csv">
+      <div class="msg" id="msg-sf">等待上傳 orders_export.csv</div>
+    </div>
+    <div class="up-block">
+      <div class="pt pt-mo">MO 店+</div>
+      <input type="file" id="f-mo" accept=".xlsx,.xls">
+      <div class="msg" id="msg-mo">等待上傳訂單 Excel</div>
+    </div>
+    <div class="up-block">
+      <div class="pt pt-pk">PINKOI</div>
+      <input type="file" id="f-pk" accept=".xlsx,.xls,.csv">
+      <div class="msg" id="msg-pk">等待上傳訂單檔</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- 儀表板 -->
+<div class="pg" id="pg-dash">
+
+<div class="flt">
+  <label>年份</label>
+  <select id="flt-year"><option value="">全部</option></select>
+  <label>月份</label>
+  <select id="flt-month">
+    <option value="">全部</option>
+    <option value="01">1月</option><option value="02">2月</option><option value="03">3月</option>
+    <option value="04">4月</option><option value="05">5月</option><option value="06">6月</option>
+    <option value="07">7月</option><option value="08">8月</option><option value="09">9月</option>
+    <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+  </select>
+  <label>平台</label>
+  <select id="flt-platform">
+    <option value="">全部</option>
+    <option value="蝦皮">蝦皮</option><option value="官網">官網</option>
+    <option value="MO店+">MO店+</option><option value="PINKOI">PINKOI</option>
+    <option value="LINE/其他">LINE/其他</option>
+  </select>
+  <button class="btn" onclick="renderDash()">套用</button>
+  <button class="btn-bl" onclick="exportSummary()">匯出彙總 CSV</button>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-lbl">總營業額</div><div class="kpi-val" id="k-total">$0</div><div class="kpi-sub" id="k-total-sub"></div></div>
+  <div class="kpi k-net"><div class="kpi-lbl">實際淨利</div><div class="kpi-val" id="k-net">$0</div><div class="kpi-sub" id="k-net-sub"></div></div>
+  <div class="kpi k-fee"><div class="kpi-lbl">總手續費</div><div class="kpi-val" id="k-fee">$0</div><div class="kpi-sub" id="k-fee-sub"></div></div>
+  <div class="kpi k-ord"><div class="kpi-lbl">訂單數</div><div class="kpi-val" id="k-ord">0</div><div class="kpi-sub" id="k-ord-sub"></div></div>
+  <div class="kpi k-avg"><div class="kpi-lbl">平均客單價</div><div class="kpi-val" id="k-avg">$0</div><div class="kpi-sub">營業額/訂單數</div></div>
+</div>
+
+<div class="box">
+  <h2>各平台表現 <small>點卡片可篩選</small></h2>
+  <div class="platform-grid" id="platform-grid"></div>
+</div>
+
+<div class="chart-row">
+  <div class="chart-box">
+    <h3>每日營收趨勢</h3>
+    <div class="chart-wrap"><canvas id="chart-daily"></canvas></div>
+  </div>
+  <div class="chart-box">
+    <h3>平台占比</h3>
+    <div class="chart-wrap"><canvas id="chart-pie"></canvas></div>
+  </div>
+</div>
+
+<div class="box">
+  <h2>每月趨勢</h2>
+  <div class="chart-wrap" style="height:280px"><canvas id="chart-monthly"></canvas></div>
+</div>
+
+</div>
+
+<!-- 訂單明細 -->
+<div class="pg" id="pg-detail">
+
+<div class="flt">
+  <label>搜尋</label>
+  <input type="text" id="d-search" placeholder="訂單編號 / 平台" oninput="renderDetail()" style="width:200px">
+  <label>平台</label>
+  <select id="d-platform" onchange="renderDetail()">
+    <option value="">全部</option>
+    <option value="蝦皮">蝦皮</option><option value="官網">官網</option>
+    <option value="MO店+">MO店+</option><option value="PINKOI">PINKOI</option>
+    <option value="LINE/其他">LINE/其他</option>
+  </select>
+  <label>年</label>
+  <select id="d-year" onchange="renderDetail()"><option value="">全部</option></select>
+  <label>月</label>
+  <select id="d-month" onchange="renderDetail()">
+    <option value="">全部</option>
+    <option value="01">1月</option><option value="02">2月</option><option value="03">3月</option>
+    <option value="04">4月</option><option value="05">5月</option><option value="06">6月</option>
+    <option value="07">7月</option><option value="08">8月</option><option value="09">9月</option>
+    <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+  </select>
+  <button class="btn-bl" onclick="exportDetail()">匯出明細</button>
+  <span style="font-size:.78rem;color:#555" id="d-count"></span>
+</div>
+
+<div class="box" style="padding:0">
+  <div class="tw">
+    <table>
+      <thead><tr>
+        <th>平台</th><th>訂單日期</th><th>訂單編號</th><th>狀態</th>
+        <th style="text-align:right">總金額</th><th style="text-align:right">手續費</th><th style="text-align:right">淨利</th>
+      </tr></thead>
+      <tbody id="detail-rows"></tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<!-- 手動單 -->
+<div class="pg" id="pg-manual">
+
+<div class="note">
+  手動單儲存於本地瀏覽器（localStorage）。LINE / Mail / FB 等非電商通路訂單請在這裡管理。
+</div>
+
+<div id="manual-form">
+  <h2 style="margin-bottom:10px">新增手動單</h2>
+  <div class="form-grid">
+    <label>日期 <input type="date" id="m-date" required></label>
+    <label>客戶/單號 <input type="text" id="m-customer" placeholder="LINE/王小明" required></label>
+    <label>實收金額 <input type="number" id="m-amount" placeholder="900" required></label>
+    <label>運費成本 <input type="number" id="m-shipping" placeholder="60" value="0"></label>
+    <label>付款方式 <select id="m-method"><option>匯款</option><option>面交</option><option>現金</option><option>其他</option></select></label>
+    <label>交易詳情 <input type="text" id="m-detail" placeholder="高爾夫球印刷/3打/雙面"></label>
+  </div>
+  <button class="btn" onclick="addManual()">＋ 新增此筆</button>
+  <button class="btn-gn" onclick="importManualCSV()" style="margin-left:8px">📥 匯入 CSV 批次新增</button>
+  <input type="file" id="f-manual-import" accept=".csv,.xlsx" style="display:none">
+</div>
+
+<div class="box" style="padding:0">
+  <div style="padding:14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2a2a2a">
+    <h2 style="margin:0">手動單列表 <small id="m-count"></small></h2>
+    <button class="btn-bl" onclick="exportManual()">匯出 CSV</button>
+  </div>
+  <div class="tw" style="max-height:500px">
+    <table>
+      <thead><tr>
+        <th>日期</th><th>客戶/單號</th><th style="text-align:right">實收</th>
+        <th style="text-align:right">運費</th><th style="text-align:right">淨利</th>
+        <th>付款</th><th>詳情</th><th></th>
+      </tr></thead>
+      <tbody id="manual-rows"></tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<script>
+// 全域資料
+var DATA={ sp:[], sf:[], mo:[], pk:[], manual:[] };
+var allOrders=[];  // 統一格式
+var dailyChart=null, pieChart=null, monthlyChart=null;
+var selectedPlatform='';
+
+// ── 工具 ──
+function msg(id,t,c){var e=document.getElementById('msg-'+id);if(!e)return;e.textContent=t;e.className='msg'+(c?' '+c:'');}
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+function fmtN(n){return Math.round(n).toLocaleString();}
+
+function goTab(id){
+  ['up','dash','detail','manual'].forEach(function(t){
+    document.getElementById('tab-'+t).classList.toggle('on',t===id);
+    document.getElementById('pg-'+t).classList.toggle('on',t===id);
+  });
+  if(id==='dash') renderDash();
+  if(id==='detail') renderDetail();
+  if(id==='manual') renderManual();
+}
+
+// ── 解析函數 ──
+function parseLine(l){
+  var res=[],cur='',q=false;
+  for(var i=0;i<l.length;i++){
+    var c=l[i];
+    if(c==='"'){q=!q;}else if(c===','&&!q){res.push(cur);cur='';}else{cur+=c;}
+  }
+  res.push(cur);return res;
+}
+function parseCSV(txt){
+  var ls=txt.replace(/\r/g,'').split('\n'),hdr=parseLine(ls[0]),rows=[];
+  for(var i=1;i<ls.length;i++){
+    if(!ls[i].trim())continue;
+    var v=parseLine(ls[i]),r={};
+    hdr.forEach(function(h,j){r[h.trim()]=(v[j]||'').trim();});
+    rows.push(r);
+  }
+  return rows;
+}
+
+// ── 蝦皮處理 ──
+function processShopee(buf){
+  var wb=XLSX.read(buf,{type:'array',raw:false,defval:''});
+  var arr=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false,defval:''});
+  var hi=0;
+  for(var i=0;i<5&&i<arr.length;i++){
+    if(arr[i].some(function(v){return String(v).trim()==='訂單編號';})){hi=i;break;}
+  }
+  var hdr=arr[hi].map(function(v){return String(v).split('\n')[0].trim();});
+  var f={
+    ord:hdr.indexOf('訂單編號'),status:hdr.indexOf('訂單狀態'),
+    refund:hdr.indexOf('退貨 / 退款狀態'),date:hdr.indexOf('訂單成立日期'),
+    total:hdr.indexOf('商品總價'),
+    fee1:hdr.indexOf('成交手續費'),fee2:hdr.indexOf('其他服務費'),fee3:hdr.indexOf('金流與系統處理費')
+  };
+  // 同訂單去重
+  var seen={}, rows=[];
+  for(var i=hi+1;i<arr.length;i++){
+    var r=arr[i];if(!r||!r[f.ord])continue;
+    var oid=String(r[f.ord]).trim();
+    if(seen[oid])continue;
+    seen[oid]=true;
+    var status=String(r[f.status]||'').trim();
+    var total=parseFloat(r[f.total])||0;
+    var fee=(parseFloat(r[f.fee1])||0)+(parseFloat(r[f.fee2])||0)+(parseFloat(r[f.fee3])||0);
+    var dt=String(r[f.date]||'').substring(0,10);
+    rows.push({
+      platform:'蝦皮',ordId:oid,date:dt,status:status,
+      total:total,fee:Math.round(fee),net:Math.round(total-fee)
+    });
+  }
+  return rows;
+}
+
+// ── 官網處理 ──
+function processShopify(txt){
+  var rows=parseCSV(txt);
+  // 同訂單只取第一筆有 paid 狀態的
+  var seen={}, out=[];
+  rows.forEach(function(r){
+    var name=r['Name']||'';
+    if(!name||seen[name])return;
+    if(r['Financial Status']!=='paid')return;
+    seen[name]=true;
+    var total=parseFloat(r['Total'])||0;
+    // Shopify 手續費需從多筆估算，這裡先用 0（因為原始 CSV 沒有手續費欄位）
+    // 實際是收到 Shopify Payments 後台的另一份報表，目前用 0
+    var fee=0;
+    var dt=(r['Paid at']||'').substring(0,10);
+    out.push({
+      platform:'官網',ordId:name,date:dt,status:r['Financial Status']||'',
+      total:total,fee:fee,net:total-fee
+    });
+  });
+  return out;
+}
+
+// ── MO 處理（用「訂單進帳金額」精確淨利）──
+function processMO(buf){
+  var wb=XLSX.read(buf,{type:'array',raw:false,defval:''});
+  var arr=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false,defval:''});
+  var hi=0;
+  for(var i=0;i<5&&i<arr.length;i++){
+    if(arr[i].some(function(v){return String(v).trim()==='訂單編號';})){hi=i;break;}
+  }
+  var hdr=arr[hi].map(function(v){return String(v).split('\n')[0].trim();});
+  var f={
+    ord:hdr.indexOf('訂單編號'),
+    status:hdr.indexOf('訂單狀態'),
+    date:hdr.indexOf('轉單日'),
+    total:hdr.indexOf('訂單金額加總'),
+    income:hdr.indexOf('訂單進帳金額')  // ★ 真正的淨利
+  };
+  if(f.ord<0||f.total<0)return [];
+  // 同訂單會有多列商品，但「訂單金額加總」和「訂單進帳金額」每列相同
+  var seen={}, rows=[];
+  for(var i=hi+1;i<arr.length;i++){
+    var r=arr[i];if(!r||!r[f.ord])continue;
+    var oid=String(r[f.ord]).trim();
+    if(seen[oid])continue;
+    seen[oid]=true;
+    var total=parseFloat(r[f.total])||0;
+    var net = (f.income>=0) ? (parseFloat(r[f.income])||0) : Math.round(total*0.85);
+    // 若進帳金額為 0（例如未結算），用 11% 估算
+    if(net===0 && total>0) net=Math.round(total*0.85);
+    var fee=total-net;
+    var dt=String(r[f.date]||'').substring(0,10).replace(/\//g,'-');
+    rows.push({
+      platform:'MO店+',ordId:oid,date:dt,status:String(r[f.status]||'').trim(),
+      total:total,fee:Math.round(fee),net:Math.round(net)
+    });
+  }
+  return rows;
+}
+
+// ── PINKOI 處理（UTF-16 TSV + 平台抽成 20% 推估）──
+// PINKOI 匯出檔特殊：UTF-16 LE BOM 編碼 + Tab 分隔
+function processPinkoi(buf, isText, rawBuf){
+  var arr;
+  if(isText){
+    // 偵測編碼：開頭 \xff\xfe = UTF-16 LE
+    var firstBytes=new Uint8Array(rawBuf||[]).slice(0,2);
+    var isUTF16 = firstBytes.length>=2 && firstBytes[0]===0xff && firstBytes[1]===0xfe;
+    var content;
+    if(isUTF16 && rawBuf){
+      // 用 TextDecoder 解碼 UTF-16
+      try{content=new TextDecoder('utf-16le').decode(new Uint8Array(rawBuf).slice(2));}
+      catch(e){content=buf;}
+    }else{
+      content=buf;
+    }
+    // 偵測分隔符：tab 或 comma
+    var firstLine=content.split('\n')[0];
+    var sep = firstLine.indexOf('\t')>=0 ? '\t' : ',';
+    var lines=content.replace(/\r/g,'').split('\n');
+    arr=lines.filter(function(l){return l.trim();}).map(function(l){
+      // 處理 tab 分隔（不需考慮引號），CSV 才需 parseLine
+      if(sep==='\t'){
+        return l.split('\t').map(function(c){
+          c=c.trim();
+          // 移除前後引號
+          if(c.length>=2 && c[0]==='"' && c[c.length-1]==='"') c=c.substring(1,c.length-1);
+          return c;
+        });
+      }else{
+        return parseLine(l);
+      }
+    });
+  }else{
+    var wb=XLSX.read(buf,{type:'array',raw:false,defval:''});
+    arr=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false,defval:''});
+  }
+  var hi=0;
+  for(var i=0;i<5&&i<arr.length;i++){
+    if(arr[i].some(function(v){return String(v).trim()==='訂單編號';})){hi=i;break;}
+  }
+  var hdr=arr[hi].map(function(v){return String(v).trim();});
+  var f={
+    ord:hdr.indexOf('訂單編號'),
+    status:hdr.indexOf('訂單類型'),
+    date:hdr.indexOf('訂單成立日期'),
+    total:hdr.indexOf('總金額'),
+    sub:hdr.indexOf('小計'),
+    ship:hdr.indexOf('運費'),
+    pfee:hdr.indexOf('金流手續費'),
+    refund:hdr.indexOf('退款總金額')
+  };
+  if(f.ord<0||f.total<0)return [];
+  var seen={}, rows=[];
+  for(var i=hi+1;i<arr.length;i++){
+    var r=arr[i];if(!r||!r[f.ord])continue;
+    var oid=String(r[f.ord]).trim();
+    if(seen[oid])continue;
+    seen[oid]=true;
+    var total=parseFloat(r[f.total])||0;
+    var sub=parseFloat(r[f.sub])||0;
+    var pfee=parseFloat(r[f.pfee])||0;
+    var refund=parseFloat(r[f.refund])||0;
+    // PINKOI 手續費邏輯：
+    // 平台抽成 ~12%（國內）/ 17%（跨境），加上金流手續費，運費非平台手續費
+    // 以小計為基數（不含運費）抽成 15% 為平均估值
+    var platformFee = Math.round(sub * 0.15);
+    var fee = platformFee + pfee;
+    var net = total - fee - refund;
+    var dt=String(r[f.date]||'').substring(0,10).replace(/\//g,'-');
+    rows.push({
+      platform:'PINKOI',ordId:oid,date:dt,
+      status:String(r[f.status]||'').trim(),
+      total:total,fee:Math.round(fee),net:Math.round(net)
+    });
+  }
+  return rows;
+}
+
+// ── 上傳事件 ──
+document.getElementById('f-sp').addEventListener('change',function(){
+  if(!this.files||!this.files.length)return;
+  msg('sp','讀取中...','');
+  DATA.sp=[];
+  var files=this.files,total=files.length,done=0,errs=[];
+  for(var i=0;i<files.length;i++){
+    (function(file){
+      var reader=new FileReader();
+      reader.onload=function(e){
+        try{DATA.sp=DATA.sp.concat(processShopee(new Uint8Array(e.target.result)));}
+        catch(err){errs.push(err.message);}
+        done++;
+        if(done===total){
+          if(errs.length){msg('sp','✗ '+errs[0],'er');return;}
+          msg('sp','✓ '+total+'個檔案 ('+DATA.sp.length+'筆訂單)','ok');
+          rebuildAll();
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    })(files[i]);
+  }
+});
+
+document.getElementById('f-sf').addEventListener('change',function(){
+  if(!this.files||!this.files.length)return;
+  msg('sf','讀取中...','');
+  var f=this.files[0],reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      DATA.sf=processShopify(e.target.result);
+      msg('sf','✓ '+f.name+' ('+DATA.sf.length+'筆)','ok');
+      rebuildAll();
+    }catch(err){msg('sf','✗ '+err.message,'er');}
+  };
+  reader.readAsText(f,'UTF-8');
+});
+
+document.getElementById('f-mo').addEventListener('change',function(){
+  if(!this.files||!this.files.length)return;
+  msg('mo','讀取中...','');
+  var f=this.files[0],reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      DATA.mo=processMO(new Uint8Array(e.target.result));
+      msg('mo','✓ '+f.name+' ('+DATA.mo.length+'筆)','ok');
+      rebuildAll();
+    }catch(err){msg('mo','✗ '+err.message,'er');}
+  };
+  reader.readAsArrayBuffer(f);
+});
+
+document.getElementById('f-pk').addEventListener('change',function(){
+  if(!this.files||!this.files.length)return;
+  msg('pk','讀取中...','');
+  var f=this.files[0],isCSV=f.name.toLowerCase().endsWith('.csv');
+  // PINKOI CSV 是 UTF-16 LE，所以一律用 ArrayBuffer 讀，自動偵測編碼
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var raw=e.target.result;
+      if(isCSV){
+        // 偵測 UTF-16 BOM
+        var arr=new Uint8Array(raw);
+        var content;
+        if(arr.length>=2 && arr[0]===0xff && arr[1]===0xfe){
+          content=new TextDecoder('utf-16le').decode(arr.slice(2));
+        }else if(arr.length>=3 && arr[0]===0xef && arr[1]===0xbb && arr[2]===0xbf){
+          content=new TextDecoder('utf-8').decode(arr.slice(3));
+        }else{
+          content=new TextDecoder('utf-8').decode(arr);
+        }
+        DATA.pk=processPinkoi(content, true, raw);
+      }else{
+        DATA.pk=processPinkoi(new Uint8Array(raw), false, null);
+      }
+      msg('pk','✓ '+f.name+' ('+DATA.pk.length+'筆)','ok');
+      rebuildAll();
+    }catch(err){msg('pk','✗ '+err.message,'er');}
+  };
+  reader.readAsArrayBuffer(f);
+});
+
+// ── 手動單持久化 ──
+function loadManual(){
+  try{
+    var d=localStorage.getItem('sb_manual_orders');
+    if(d) DATA.manual=JSON.parse(d);
+  }catch(e){DATA.manual=[];}
+}
+function saveManual(){
+  try{localStorage.setItem('sb_manual_orders',JSON.stringify(DATA.manual));}catch(e){}
+}
+
+// ── 統一資料 ──
+function rebuildAll(){
+  allOrders=[].concat(DATA.sp,DATA.sf,DATA.mo,DATA.pk,DATA.manual);
+  allOrders.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+  // 更新年份下拉
+  var years={};
+  allOrders.forEach(function(o){if(o.date){years[o.date.substring(0,4)]=true;}});
+  var yKeys=Object.keys(years).sort().reverse();
+  ['flt-year','d-year'].forEach(function(id){
+    var el=document.getElementById(id);
+    var cur=el.value;
+    el.innerHTML='<option value="">全部</option>'+yKeys.map(function(y){return '<option value="'+y+'">'+y+'</option>';}).join('');
+    if(yKeys.indexOf(cur)>=0)el.value=cur;
+  });
+}
+
+// ── 篩選邏輯 ──
+function filterOrders(year,month,platform,validOnly){
+  return allOrders.filter(function(o){
+    if(!o.date)return false;
+    if(year && o.date.substring(0,4)!==year)return false;
+    if(month && o.date.substring(5,7)!==month)return false;
+    if(platform && o.platform!==platform)return false;
+    if(validOnly){
+      // 排除取消、退款、過期
+      var s=(o.status||'').toLowerCase();
+      if(s.indexOf('取消')>=0||s.indexOf('退款')>=0||s==='voided'||s==='expired'||s==='refunded')return false;
+    }
+    return true;
+  });
+}
+
+// ── 儀表板渲染 ──
+function renderDash(){
+  if(!allOrders.length){
+    document.getElementById('platform-grid').innerHTML='<div class="empty">請先到「資料上傳」頁上傳訂單檔案</div>';
+    ['k-total','k-net','k-fee','k-ord','k-avg'].forEach(function(id){document.getElementById(id).textContent='$0';});
+    return;
+  }
+  var year=document.getElementById('flt-year').value;
+  var month=document.getElementById('flt-month').value;
+  var platform=document.getElementById('flt-platform').value;
+  if(selectedPlatform&&!platform){platform=selectedPlatform;document.getElementById('flt-platform').value=selectedPlatform;}
+
+  var orders=filterOrders(year,month,platform,true);
+
+  // KPI
+  var sumTotal=orders.reduce(function(a,o){return a+o.total;},0);
+  var sumFee=orders.reduce(function(a,o){return a+o.fee;},0);
+  var sumNet=orders.reduce(function(a,o){return a+o.net;},0);
+  var ordCount=orders.length;
+  var avgPrice=ordCount?sumTotal/ordCount:0;
+  var feeRate=sumTotal?(sumFee/sumTotal*100):0;
+  var netRate=sumTotal?(sumNet/sumTotal*100):0;
+
+  document.getElementById('k-total').textContent=fmt(sumTotal);
+  document.getElementById('k-net').textContent=fmt(sumNet);
+  document.getElementById('k-fee').textContent=fmt(sumFee);
+  document.getElementById('k-ord').textContent=fmtN(ordCount);
+  document.getElementById('k-avg').textContent=fmt(avgPrice);
+  document.getElementById('k-net-sub').textContent='淨利率 '+netRate.toFixed(1)+'%';
+  document.getElementById('k-fee-sub').textContent='手續費率 '+feeRate.toFixed(1)+'%';
+  document.getElementById('k-ord-sub').textContent=year?(year+(month?'/'+month:'')):'全期';
+  var label='';
+  if(platform)label=platform;
+  if(year)label+=(label?' / ':'')+year+(month?'/'+month:'');
+  document.getElementById('k-total-sub').textContent=label||'全部資料';
+
+  // 平台卡片
+  var platforms={};
+  // 用未篩選平台的資料
+  var ordsForPlatform=filterOrders(year,month,'',true);
+  ['蝦皮','官網','MO店+','PINKOI','LINE/其他'].forEach(function(p){
+    platforms[p]={cnt:0,total:0,net:0};
+  });
+  ordsForPlatform.forEach(function(o){
+    if(!platforms[o.platform])platforms[o.platform]={cnt:0,total:0,net:0};
+    platforms[o.platform].cnt++;
+    platforms[o.platform].total+=o.total;
+    platforms[o.platform].net+=o.net;
+  });
+  var pg=document.getElementById('platform-grid');pg.innerHTML='';
+  Object.entries(platforms).forEach(function(kv){
+    var p=kv[0],d=kv[1];
+    if(d.cnt===0)return;
+    var el=document.createElement('div');
+    el.className='pcard'+(platform===p?' on':'');
+    el.dataset.p=p;
+    el.innerHTML='<div class="pcard-name">'+p+'</div><div class="pcard-amt">'+fmt(d.net)+'</div><div class="pcard-meta">'+d.cnt+' 筆 / 營業額 '+fmt(d.total)+'</div>';
+    el.onclick=function(){
+      if(selectedPlatform===p){selectedPlatform='';document.getElementById('flt-platform').value='';}
+      else{selectedPlatform=p;document.getElementById('flt-platform').value=p;}
+      renderDash();
+    };
+    pg.appendChild(el);
+  });
+
+  // 圖表
+  drawCharts(orders);
+}
+
+function drawCharts(orders){
+  // 每日趨勢
+  var daily={};
+  orders.forEach(function(o){
+    if(!o.date)return;
+    if(!daily[o.date])daily[o.date]=0;
+    daily[o.date]+=o.net;
+  });
+  var dKeys=Object.keys(daily).sort();
+  var ctxD=document.getElementById('chart-daily').getContext('2d');
+  if(dailyChart)dailyChart.destroy();
+  dailyChart=new Chart(ctxD,{
+    type:'line',
+    data:{labels:dKeys,datasets:[{label:'淨利',data:dKeys.map(function(k){return daily[k];}),borderColor:'#00e87a',backgroundColor:'rgba(0,232,122,0.1)',fill:true,tension:0.2,pointRadius:1.5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#555',font:{size:9}},grid:{color:'#1a1a1a'}},y:{ticks:{color:'#555',font:{size:10}},grid:{color:'#1a1a1a'}}}}
+  });
+
+  // 平台占比
+  var pie={};
+  orders.forEach(function(o){if(!pie[o.platform])pie[o.platform]=0;pie[o.platform]+=o.net;});
+  var ctxP=document.getElementById('chart-pie').getContext('2d');
+  if(pieChart)pieChart.destroy();
+  var colors={'蝦皮':'#ee4d2d','官網':'#96bf48','MO店+':'#ff5c8a','PINKOI':'#3eb6c4','LINE/其他':'#a78bfa'};
+  pieChart=new Chart(ctxP,{
+    type:'doughnut',
+    data:{labels:Object.keys(pie),datasets:[{data:Object.values(pie),backgroundColor:Object.keys(pie).map(function(k){return colors[k]||'#888';}),borderColor:'#0a0a0a',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#888',font:{size:11}}}}}
+  });
+
+  // 每月趨勢（依當前年份篩選）
+  var monthly={};
+  orders.forEach(function(o){
+    if(!o.date)return;
+    var ym=o.date.substring(0,7);
+    if(!monthly[ym])monthly[ym]={total:0,net:0};
+    monthly[ym].total+=o.total;
+    monthly[ym].net+=o.net;
+  });
+  var mKeys=Object.keys(monthly).sort();
+  var ctxM=document.getElementById('chart-monthly').getContext('2d');
+  if(monthlyChart)monthlyChart.destroy();
+  monthlyChart=new Chart(ctxM,{
+    type:'bar',
+    data:{labels:mKeys,datasets:[
+      {label:'營業額',data:mKeys.map(function(k){return monthly[k].total;}),backgroundColor:'#3b82f6'},
+      {label:'淨利',data:mKeys.map(function(k){return monthly[k].net;}),backgroundColor:'#00e87a'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#888'}}},scales:{x:{ticks:{color:'#555'},grid:{color:'#1a1a1a'}},y:{ticks:{color:'#555'},grid:{color:'#1a1a1a'}}}}
+  });
+}
+
+// ── 訂單明細 ──
+function renderDetail(){
+  var search=document.getElementById('d-search').value.toLowerCase();
+  var platform=document.getElementById('d-platform').value;
+  var year=document.getElementById('d-year').value;
+  var month=document.getElementById('d-month').value;
+  var orders=filterOrders(year,month,platform,false);
+  if(search){
+    orders=orders.filter(function(o){
+      return (o.ordId||'').toLowerCase().indexOf(search)>=0||(o.platform||'').toLowerCase().indexOf(search)>=0;
+    });
+  }
+  document.getElementById('d-count').textContent=orders.length+' 筆';
+  var tagMap={'蝦皮':'tag-sp','官網':'tag-sf','MO店+':'tag-mo','PINKOI':'tag-pk','LINE/其他':'tag-mn'};
+  var rows=orders.slice(0,500).map(function(o){
+    var tag=tagMap[o.platform]||'';
+    return '<tr><td class="'+tag+'">'+o.platform+'</td><td>'+(o.date||'')+'</td>'+
+      '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis" title="'+o.ordId+'">'+o.ordId+'</td>'+
+      '<td style="font-size:.7rem">'+(o.status||'').substring(0,16)+'</td>'+
+      '<td class="amt">'+fmtN(o.total)+'</td><td class="fee">'+fmtN(o.fee)+'</td><td class="net">'+fmtN(o.net)+'</td></tr>';
+  }).join('');
+  if(orders.length>500)rows+='<tr><td colspan="7" style="text-align:center;color:#555;padding:10px">僅顯示前 500 筆，請用篩選縮小範圍或匯出 CSV</td></tr>';
+  document.getElementById('detail-rows').innerHTML=rows||'<tr><td colspan="7" class="empty">無資料</td></tr>';
+}
+
+// ── 手動單管理 ──
+function addManual(){
+  var d=document.getElementById('m-date').value;
+  var c=document.getElementById('m-customer').value.trim();
+  var a=parseFloat(document.getElementById('m-amount').value);
+  var s=parseFloat(document.getElementById('m-shipping').value)||0;
+  var m=document.getElementById('m-method').value;
+  var dt=document.getElementById('m-detail').value.trim();
+  if(!d||!c||isNaN(a)){alert('請填寫日期、客戶、金額');return;}
+  DATA.manual.push({
+    platform:'LINE/其他',
+    ordId:c,
+    date:d,
+    status:m,
+    total:a,
+    fee:s,  // 把運費當作"手續費"
+    net:a-s,
+    detail:dt
+  });
+  saveManual();
+  ['m-date','m-customer','m-amount','m-detail'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('m-shipping').value='0';
+  rebuildAll();renderManual();
+}
+function delManual(i){
+  if(!confirm('確定刪除這筆手動單？'))return;
+  DATA.manual.splice(i,1);saveManual();rebuildAll();renderManual();
+}
+function renderManual(){
+  document.getElementById('m-count').textContent='（共 '+DATA.manual.length+' 筆）';
+  var tb=document.getElementById('manual-rows');
+  if(!DATA.manual.length){tb.innerHTML='<tr><td colspan="8" class="empty">尚無手動單</td></tr>';return;}
+  // 按日期排序
+  var sorted=DATA.manual.map(function(m,i){return {data:m,idx:i};}).sort(function(a,b){return (b.data.date||'').localeCompare(a.data.date||'');});
+  tb.innerHTML=sorted.map(function(s){
+    var m=s.data;
+    return '<tr><td>'+m.date+'</td><td>'+m.ordId+'</td><td class="amt">'+fmtN(m.total)+'</td>'+
+      '<td class="fee">'+fmtN(m.fee)+'</td><td class="net">'+fmtN(m.net)+'</td>'+
+      '<td>'+(m.status||'')+'</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis" title="'+(m.detail||'')+'">'+(m.detail||'')+'</td>'+
+      '<td><button class="btn-r" onclick="delManual('+s.idx+')">刪</button></td></tr>';
+  }).join('');
+}
+function importManualCSV(){
+  document.getElementById('f-manual-import').click();
+}
+document.getElementById('f-manual-import').addEventListener('change',function(){
+  if(!this.files||!this.files.length)return;
+  var f=this.files[0],reader=new FileReader();
+  var isXLSX=f.name.toLowerCase().endsWith('.xlsx');
+  reader.onload=function(e){
+    try{
+      var rows;
+      if(isXLSX){
+        var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',raw:false,defval:''});
+        rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+      }else{
+        rows=parseCSV(e.target.result);
+      }
+      var added=0;
+      rows.forEach(function(r){
+        var d=r['日期']||r['date']||'';
+        if(d instanceof Date)d=d.toISOString().substring(0,10);
+        else d=String(d).substring(0,10);
+        var c=r['客戶/單號']||r['客戶']||'';
+        var a=parseFloat(r['實收金額']||r['金額']||0);
+        var s=parseFloat(r['運費成本']||r['運費']||0);
+        var m=r['備註/付款方式']||r['付款方式']||'';
+        var dt=r['交易詳情']||r['詳情']||'';
+        if(!d||!c||!a)return;
+        DATA.manual.push({platform:'LINE/其他',ordId:c,date:d,status:m,total:a,fee:s,net:a-s,detail:dt});
+        added++;
+      });
+      saveManual();rebuildAll();renderManual();
+      alert('✓ 已匯入 '+added+' 筆手動單');
+    }catch(err){alert('✗ 匯入失敗：'+err.message);}
+  };
+  if(isXLSX)reader.readAsArrayBuffer(f);else reader.readAsText(f,'UTF-8');
+  this.value='';
+});
+
+// ── 匯出 ──
+function csvDL(name,rows){
+  var csv='\ufeff'+rows.map(function(r){return r.map(function(c){
+    var s=String(c==null?'':c);
+    if(s.indexOf(',')>=0||s.indexOf('"')>=0||s.indexOf('\n')>=0)return '"'+s.replace(/"/g,'""')+'"';
+    return s;
+  }).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download=name;a.click();
+}
+function exportSummary(){
+  var year=document.getElementById('flt-year').value;
+  var month=document.getElementById('flt-month').value;
+  var platform=document.getElementById('flt-platform').value;
+  var orders=filterOrders(year,month,platform,true);
+  var rows=[['平台','訂單日期','訂單編號','狀態','總金額','手續費','淨利']];
+  orders.forEach(function(o){rows.push([o.platform,o.date,o.ordId,o.status,o.total,o.fee,o.net]);});
+  csvDL('SunBrother營收_'+(year||'ALL')+(month||'')+'.csv',rows);
+}
+function exportDetail(){
+  var search=document.getElementById('d-search').value.toLowerCase();
+  var platform=document.getElementById('d-platform').value;
+  var year=document.getElementById('d-year').value;
+  var month=document.getElementById('d-month').value;
+  var orders=filterOrders(year,month,platform,false);
+  if(search)orders=orders.filter(function(o){return (o.ordId||'').toLowerCase().indexOf(search)>=0||(o.platform||'').toLowerCase().indexOf(search)>=0;});
+  var rows=[['平台','訂單日期','訂單編號','狀態','總金額','手續費','淨利']];
+  orders.forEach(function(o){rows.push([o.platform,o.date,o.ordId,o.status,o.total,o.fee,o.net]);});
+  csvDL('SunBrother明細_'+(year||'ALL')+(month||'')+'.csv',rows);
+}
+function exportManual(){
+  var rows=[['日期','客戶/單號','實收金額','運費成本','付款方式','交易詳情','淨利']];
+  DATA.manual.forEach(function(m){rows.push([m.date,m.ordId,m.total,m.fee,m.status,m.detail||'',m.net]);});
+  csvDL('SunBrother手動單.csv',rows);
+}
+
+// 初始化
+loadManual();
+rebuildAll();
+renderManual();
+
+// 預設今天
+var today=new Date().toISOString().substring(0,10);
+document.getElementById('m-date').value=today;
+</script>
+</body>
+</html>

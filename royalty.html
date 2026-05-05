@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>SunBrother IP 分潤計算器</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+body{background:#0a0a0a;color:#e8e8e8;font-family:sans-serif;padding:30px;max-width:1200px;margin:0 auto}
+h1{color:#ff3c00;margin-bottom:4px}
+.sub{color:#555;font-size:.85rem;margin-bottom:20px}
+.tabs{display:flex;border-bottom:2px solid #2a2a2a;margin-bottom:20px}
+.tab{padding:10px 18px;cursor:pointer;color:#555;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:.9rem}
+.tab.on{color:#ff3c00;border-bottom-color:#ff3c00}
+.pg{display:none}.pg.on{display:block}
+.box{background:#111;border:1px solid #2a2a2a;border-radius:4px;padding:18px;margin-bottom:14px}
+h2{color:#555;font-size:.85rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.ub{background:#1a1a1a;border:1px solid #333;border-radius:4px;padding:14px}
+.pt{font-size:1rem;font-weight:bold;letter-spacing:2px;margin-bottom:8px}
+.pt-pd{color:#a78bfa}.pt-sf{color:#96bf48}.pt-sp{color:#ee4d2d}
+input[type=file]{display:block;color:#e8e8e8;margin:8px 0;width:100%;cursor:pointer}
+.msg{font-family:monospace;font-size:.78rem;padding:4px 8px;border-radius:3px;margin-top:6px;background:#0a0a0a;color:#555;min-height:22px}
+.msg.ok{color:#00e87a}.msg.er{color:#ff3c00}
+.sb{font-family:monospace;font-size:.78rem;padding:8px 12px;border-radius:3px;border:1px solid #2a2a2a;color:#ffd700;border-color:#ffd700;margin-bottom:14px}
+.sb.ok{color:#00e87a;border-color:#00e87a}
+input[type=month],input[type=text]{background:#1a1a1a;border:1px solid #333;color:#e8e8e8;padding:7px 10px;border-radius:3px;font-family:monospace;font-size:.9rem}
+.btn{background:#ff3c00;color:#fff;border:none;padding:12px;font-size:1rem;cursor:pointer;border-radius:3px;width:100%;margin-top:10px;font-weight:bold}
+.btn:disabled{background:#2a2a2a;cursor:not-allowed}
+.btn:hover:not(:disabled){background:#ff8c00}
+.btn-out{background:#1a1a1a;border:1px solid #ff3c00;color:#ff3c00;padding:6px 14px;font-size:.85rem;cursor:pointer;border-radius:3px;width:auto}.btn-out:hover{background:#ff3c00;color:#fff}
+.btn-bl{background:#1a1a1a;border:1px solid #3b82f6;color:#3b82f6;padding:6px 14px;font-size:.85rem;cursor:pointer;border-radius:3px}.btn-bl:hover{background:#3b82f6;color:#fff}
+.row{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.note{background:#1a1a1a;border:1px solid #ffd700;border-radius:4px;padding:12px;font-size:.78rem;color:#ffd700;margin-bottom:14px;line-height:1.6}
+.res{display:none}.res.on{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:3px;padding:12px;cursor:pointer}
+.card:hover{border-color:#ff3c00}.card.on{border-color:#ff3c00;background:rgba(255,60,0,.07)}
+.card .cn{font-size:1rem;font-weight:bold;margin-bottom:3px}
+.card .ca{font-family:monospace;font-size:1.1rem;font-weight:bold;color:#00e87a}
+.card .cc{font-size:.65rem;color:#555}
+.detail{display:none;background:#111;border:1px solid #2a2a2a;border-radius:4px;padding:16px;margin-bottom:14px}
+.detail.on{display:block}
+.dh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #2a2a2a;flex-wrap:wrap;gap:8px}
+.dn{font-size:1.4rem;font-weight:bold;color:#ff3c00}
+.da{font-family:monospace;font-size:1.8rem;font-weight:bold;color:#00e87a}
+.tag{display:inline-block;font-size:.65rem;padding:2px 7px;border-radius:2px;background:#2a2a2a;color:#888;margin:2px 2px 0 0}
+.tiers{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tier{background:#1a1a1a;border:1px solid #2a2a2a;padding:4px 8px;border-radius:2px;font-size:.7rem;font-family:monospace}
+.tier b{display:block;color:#555;font-size:.62rem}
+.tw{overflow-x:auto}
+table{width:100%;font-size:.7rem;font-family:monospace;border-collapse:collapse}
+th{text-align:left;color:#555;padding:4px 6px;border-bottom:1px solid #2a2a2a;white-space:nowrap;font-weight:normal}
+td{padding:3px 6px;border-bottom:1px solid rgba(42,42,42,.5);color:#e8e8e8;vertical-align:top;white-space:nowrap}
+td.aj{color:#ffd700}td.ry{color:#00e87a;font-weight:bold}
+.grand{background:#111;border:1px solid #ff3c00;border-radius:3px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px}
+.grand h3{color:#555;font-size:.85rem;letter-spacing:2px;text-transform:uppercase}
+.grand-n{font-family:monospace;font-size:1.4rem;font-weight:bold;color:#ff3c00}
+.skip{font-size:.7rem;color:#555;font-family:monospace;padding:6px 8px;border:1px solid #2a2a2a;border-radius:3px;margin-top:6px;line-height:1.8}
+.des-tbl{width:100%;border-collapse:collapse;font-size:.8rem}
+.des-tbl th{text-align:left;color:#555;padding:6px 8px;border-bottom:1px solid #2a2a2a;font-size:.7rem}
+.des-tbl td{padding:5px 8px;border-bottom:1px solid rgba(42,42,42,.5)}
+.des-tbl input[type=text]{background:transparent;border:1px solid transparent;width:100%;font-size:.76rem;padding:2px 5px;border-radius:2px;color:#e8e8e8;font-family:monospace}
+.des-tbl input[type=text]:focus{outline:none;background:#1a1a1a;border-color:#333}
+.mode-btn{background:#1a1a1a;border:1px solid #333;color:#888;padding:6px 14px;font-size:.78rem;cursor:pointer;border-radius:3px}
+.mode-btn:hover{border-color:#ff3c00;color:#fff}
+.mode-btn.on{background:#ff3c00;color:#fff;border-color:#ff3c00}
+.hint{font-size:.65rem;color:#555;margin-top:8px;line-height:1.7;font-family:monospace;border-left:2px solid #2a2a2a;padding-left:10px}
+</style>
+</head>
+<body>
+
+<h1>SunBrother IP 分潤計算器</h1>
+<div class="sub">v13.0</div>
+
+<div class="tabs">
+  <div class="tab on" id="tab-calc" onclick="goTab('calc')">分潤計算</div>
+  <div class="tab" id="tab-des" onclick="goTab('des')">插畫家管理</div>
+</div>
+
+<div class="pg on" id="pg-calc">
+
+<div class="note">
+  使用流程：上傳 products_export.csv → 上傳訂單 → 選月份 → 計算
+</div>
+
+<div class="box">
+  <h2>Step 1 — 商品定價庫</h2>
+  <div class="ub">
+    <div class="pt pt-pd">SHOPIFY PRODUCTS</div>
+    <input type="file" id="f-pd" accept=".csv">
+    <div class="msg" id="msg-pd">等待上傳 products_export.csv</div>
+  </div>
+</div>
+
+<div class="box">
+  <h2>Step 2 — 訂單資料</h2>
+  <div class="grid">
+    <div class="ub">
+      <div class="pt pt-sf">SHOPIFY ORDERS</div>
+      <input type="file" id="f-sf" accept=".csv">
+      <div class="msg" id="msg-sf">等待上傳 orders_export.csv</div>
+    </div>
+    <div class="ub">
+      <div class="pt pt-sp">SHOPEE</div>
+      <input type="file" id="f-sp" accept=".xlsx,.xls" multiple>
+      <div class="msg" id="msg-sp">等待上傳蝦皮 Excel（可多選）</div>
+    </div>
+  </div>
+  <div class="sb" id="sb">請上傳資料</div>
+</div>
+
+<div class="box">
+  <h2>Step 3 — 計算</h2>
+  <div class="row">
+    <input type="month" id="mo">
+    <span style="font-size:.75rem;color:#555">留空 = 全部資料</span>
+  </div>
+  <button class="btn" id="cb" disabled onclick="calc()">開始計算分潤</button>
+</div>
+
+<div class="res" id="res">
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h2 id="rt" style="margin:0">分潤結果</h2>
+      <button class="btn-out" onclick="doExport()">匯出 CSV</button>
+    </div>
+    <p style="font-size:.72rem;color:#555;margin-bottom:12px">點擊插畫家卡片查看明細</p>
+    <div class="cards" id="cards"></div>
+  </div>
+  <div class="detail" id="detail">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;gap:6px">
+        <button class="mode-btn on" id="mode-internal" onclick="setMode('internal')">內部模式（看完整數據）</button>
+        <button class="mode-btn" id="mode-public" onclick="setMode('public')">對外模式（給插畫家）</button>
+      </div>
+      <button class="btn-out" onclick="exportDes()" style="font-size:.78rem">匯出此插畫家明細 CSV</button>
+    </div>
+    <div class="dh">
+      <div><div class="dn" id="d-name"></div><div style="margin-top:4px" id="d-ips"></div></div>
+      <div style="text-align:right"><div class="da" id="d-amt"></div><div style="font-size:.78rem;color:#555" id="d-meta"></div></div>
+    </div>
+    <div class="tiers" id="d-tiers"></div>
+    <div class="tw">
+      <table>
+        <thead id="d-thead"></thead>
+        <tbody id="d-rows"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="grand"><h3>本期分潤總額</h3><div class="grand-n" id="grand">$0</div></div>
+  <div class="skip" id="skip" style="display:none"></div>
+</div>
+
+</div>
+
+<div class="pg" id="pg-des">
+  <div class="box">
+    <h2>新增插畫家</h2>
+    <div class="row">
+      <input type="text" id="n-name" placeholder="姓名" style="width:100px">
+      <input type="text" id="n-ips" placeholder="IP（逗號分隔）" style="width:200px">
+      <input type="text" id="n-cats" placeholder="品類碼" style="width:120px">
+      <input type="text" id="n-old" placeholder="舊格式前綴（可空）" style="width:200px">
+      <button class="btn-bl" onclick="addDes()">新增</button>
+    </div>
+    <div class="hint">品類碼 = 新格式 SKU「SB-XXX-」｜HPN HGL HSC（淳涵）SPT SSC SVL（阿超）DVS MJC（蘇明彰）SMS（暖暖）ERS DAI PPF（徐沛弘）SDC（曲肯）PZM（凱文）</div>
+  </div>
+  <div class="box">
+    <h2>插畫家列表</h2>
+    <div class="tw">
+      <table class="des-tbl">
+        <thead><tr><th>姓名</th><th>IP 名稱</th><th>品類碼</th><th>舊格式前綴</th><th></th></tr></thead>
+        <tbody id="des-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+var sfRows=[], spRows=[], priceDb={}, titleDb={}, pdReady=false, aRes=null;
+
+function msg(id,t,c){var e=document.getElementById('msg-'+id);e.textContent=t;e.className='msg'+(c?' '+c:'');}
+function sb(t,c){var e=document.getElementById('sb');e.textContent=t;e.className='sb'+(c?' '+c:'');}
+
+function upd(){
+  var ok=pdReady && (sfRows.length>0||spRows.length>0);
+  document.getElementById('cb').disabled=!ok;
+  if(!pdReady){sb('請先上傳商品定價庫','');return;}
+  if(!sfRows.length && !spRows.length){sb('✓ 定價庫就緒，請上傳訂單','');return;}
+  var p=[];
+  if(sfRows.length)p.push('Shopify '+sfRows.length+'筆');
+  if(spRows.length)p.push('蝦皮 '+spRows.length+'筆');
+  sb('✓ '+p.join('、')+' — 可開始計算','ok');
+}
+
+function parseLine(l){
+  var res=[],cur='',q=false;
+  for(var i=0;i<l.length;i++){
+    var c=l[i];
+    if(c==='"'){q=!q;}else if(c===','&&!q){res.push(cur);cur='';}else{cur+=c;}
+  }
+  res.push(cur);return res;
+}
+function parseCSV(txt){
+  var ls=txt.replace(/\r/g,'').split('\n'),hdr=parseLine(ls[0]),rows=[];
+  for(var i=1;i<ls.length;i++){
+    if(!ls[i].trim())continue;
+    var v=parseLine(ls[i]),r={};
+    hdr.forEach(function(h,j){r[h.trim()]=(v[j]||'').trim();});
+    rows.push(r);
+  }
+  return rows;
+}
+function parseShopee(buf){
+  if(typeof XLSX==='undefined')throw new Error('XLSX未載入');
+  var wb=XLSX.read(buf,{type:'array',raw:false,defval:''});
+  var arr=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false,defval:''});
+  var hi=0;
+  for(var i=0;i<5&&i<arr.length;i++){
+    if(arr[i].some(function(v){return String(v).trim()==='訂單編號';})){hi=i;break;}
+  }
+  var hdr=arr[hi].map(function(v){return String(v).split('\n')[0].trim();});
+  var f={status:hdr.indexOf('訂單狀態'),refund:hdr.indexOf('退貨 / 退款狀態'),
+    sku:hdr.findIndex(function(h){return h==='商品選項貨號';}),
+    qty:hdr.findIndex(function(h){return h==='數量';}),
+    refQty:hdr.findIndex(function(h){return h==='退貨數量';}),
+    price:hdr.findIndex(function(h){return h==='商品原價';}),
+    name:hdr.findIndex(function(h){return h==='商品名稱';}),
+    ordId:hdr.findIndex(function(h){return h==='訂單編號';}),
+    date:hdr.findIndex(function(h){return h==='訂單成立日期';})};
+  if(f.sku<0)throw new Error('找不到商品選項貨號');
+  var rows=[];
+  for(var i=hi+1;i<arr.length;i++){
+    var r=arr[i];if(!r||!r[f.ordId])continue;
+    rows.push({status:String(r[f.status]||'').trim(),refund:String(r[f.refund]||'').trim(),
+      sku:String(r[f.sku]||'').trim(),qty:parseInt(r[f.qty]||'1')||1,
+      refQty:parseInt(r[f.refQty]||'0')||0,price:parseFloat(r[f.price]||'0')||0,
+      name:String(r[f.name]||'').trim(),ordId:String(r[f.ordId]||'').trim(),
+      date:String(r[f.date]||'').substring(0,10)});
+  }
+  return rows;
+}
+
+function loadPriceDb(txt){
+  var rows=[],cur='',q=false,row=[];
+  for(var i=0;i<txt.length;i++){
+    var c=txt[i];
+    if(q){
+      if(c==='"'&&txt[i+1]==='"'){cur+='"';i++;}
+      else if(c==='"'){q=false;}
+      else{cur+=c;}
+    }else{
+      if(c==='"'){q=true;}
+      else if(c===','){row.push(cur);cur='';}
+      else if(c==='\n'||c==='\r'){
+        row.push(cur);cur='';
+        if(row.some(function(x){return x.trim();}))rows.push(row);
+        row=[];
+        if(c==='\r'&&txt[i+1]==='\n')i++;
+      }else{cur+=c;}
+    }
+  }
+  if(cur||row.length){row.push(cur);if(row.some(function(x){return x.trim();}))rows.push(row);}
+  if(rows.length<2)throw new Error('CSV 為空');
+  var iS=rows[0].indexOf('Variant SKU'),iP=rows[0].indexOf('Variant Price'),iT=rows[0].indexOf('Title');
+  if(iS<0)throw new Error('找不到 Variant SKU 欄');
+  var np={},nt={},cnt=0,pT='';
+  for(var i=1;i<rows.length;i++){
+    var r=rows[i];
+    var t=(iT>=0&&r[iT])?r[iT].trim():'';if(t)pT=t;
+    var s=iS<r.length?r[iS].trim():'';
+    var p=iP<r.length?parseFloat(r[iP]):NaN;
+    if(s&&!isNaN(p)&&p>0){np[s]=p;nt[s]=pT;cnt++;}
+  }
+  if(!cnt)throw new Error('未找到有效 SKU');
+  priceDb=np;titleDb=nt;pdReady=true;
+  msg('pd','✓ 定價庫已就緒（'+cnt.toLocaleString()+' 筆 SKU）','ok');
+  upd();
+}
+
+document.getElementById('f-pd').addEventListener('change', function(){
+  if(!this.files||!this.files.length)return;
+  msg('pd','解析中（12MB 約 5 秒）...','');
+  var f=this.files[0], reader=new FileReader();
+  reader.onload=function(e){ try{ loadPriceDb(e.target.result); }catch(err){ msg('pd','✗ '+err.message,'er'); } };
+  reader.readAsText(f,'UTF-8');
+});
+
+document.getElementById('f-sf').addEventListener('change',function(){
+  if(!this.files||!this.files.length)return;
+  msg('sf','讀取中...','');
+  var f=this.files[0], reader=new FileReader();
+  reader.onload=function(e){ try{ sfRows=parseCSV(e.target.result); msg('sf','✓ '+f.name+' ('+sfRows.length+'筆)','ok'); upd(); }catch(err){ msg('sf','✗ '+err.message,'er'); } };
+  reader.readAsText(f,'UTF-8');
+});
+
+document.getElementById('f-sp').addEventListener('change',function(){
+  if(!this.files||!this.files.length)return;
+  msg('sp','讀取中...','');
+  spRows=[];
+  var files=this.files, total=files.length, done=0, errs=[];
+  for(var i=0;i<files.length;i++){
+    (function(file){
+      var reader=new FileReader();
+      reader.onload=function(e){
+        try{ spRows=spRows.concat(parseShopee(new Uint8Array(e.target.result))); }catch(err){ errs.push(err.message); }
+        done++;
+        if(done===total){
+          if(errs.length){ msg('sp','✗ '+errs[0],'er'); return; }
+          msg('sp','✓ '+total+'個檔案 ('+spRows.length+'筆)','ok');
+          upd();
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    })(files[i]);
+  }
+});
+
+var DESIGNERS=[
+  {name:"阿超",ips:["SUPER_TW"],cats:["SPT","SSC","SVL"],old:["SPS","SPM","SPL","SPSC","SPCO","SPSMM","SPSMS","SPSML","SPSTS","SPSTM","SPSTL","SPXL","SPSMXL"]},
+  {name:"徐沛弘",ips:["eclipssx.tw蝕影","Daisheng family","PPF"],cats:["ERS","DAI","PPF"],old:["EC","SAM","SAL","SAS","SASMS","SASMM","SASML","DASTS","DASTM","DASTL","DASMS","DASMM","DASML","PPFSTS","PPFSTM","PPFSTL","PPFSMS","PPFSMM","PPFSML"]},
+  {name:"曲肯",ips:["SAD CAT"],cats:["SDC"],old:["SDC"]},
+  {name:"淳涵",ips:["HAPPINESS STUDIO"],cats:["HPN","HSC","HGL"],old:["HAS","HAM","HAL","HASC","HACO","HASMS","HASMM","HASML","HAGC","HAGG","HAGH"]},
+  {name:"蘇明彰",ips:["惡鬼不餓","MAJI CAT麻糬貓"],cats:["DVS","MJC"],old:["DVS","DVL","DVM","DVSC","DVCO","DVSML","DVSMS","DVSMM","MAM","MAL","MAS","MASMM","MASMS","MASML"]},
+  {name:"凱文",ips:["PUZZLE MAN"],cats:["PZM"],old:["PUM","PUL","PUS","PUSMM","PUSMS","PUSML"]},
+  {name:"暖暖小河瓶",ips:["暖暖小河瓶"],cats:["SMS"],old:[],ww:true}
+];
+
+function goTab(id){
+  ['calc','des'].forEach(function(t){
+    document.getElementById('tab-'+t).classList.toggle('on',t===id);
+    document.getElementById('pg-'+t).classList.toggle('on',t===id);
+  });
+  if(id==='des') renderDesTable();
+}
+
+function getDes(sku,nm){
+  if(!sku)return null;
+  var s=sku.trim().toUpperCase(),pn=nm||titleDb[sku]||'';
+  var m=s.match(/^SB-([A-Z]+)-/);
+  if(m){var cat=m[1];for(var i=0;i<DESIGNERS.length;i++){var d=DESIGNERS[i];if(d.cats.indexOf(cat)>=0){if(d.ww)return pn.indexOf('暖暖小河瓶')>=0?d.name:null;return d.name;}}return null;}
+  var wm=['SMS-','SMM-','SML-'];
+  for(var i=0;i<wm.length;i++){if(s.indexOf(wm[i])===0){var ww=null;for(var j=0;j<DESIGNERS.length;j++){if(DESIGNERS[j].ww){ww=DESIGNERS[j];break;}}if(ww&&pn.indexOf('暖暖小河瓶')>=0)return ww.name;return null;}}
+  for(var i=0;i<DESIGNERS.length;i++){var d=DESIGNERS[i];if(d.ww)continue;for(var j=0;j<d.old.length;j++){var pfx=d.old[j];if(s===pfx||s.indexOf(pfx+'-')===0)return d.name;}}
+  return null;
+}
+function royRate(p){return p>=500?.20:p>=251?.15:p>=100?.10:0;}
+function doSkip(sku){if(!sku)return{s:true,r:'無SKU'};var u=sku.toUpperCase();if(u.indexOf('SCR40')>=0)return{s:true,r:'螺絲加長'};if(/-V0[1-9]$/.test(u))return{s:true,r:'反光加購'};if(u.indexOf('SGL-CAP')>=0)return{s:true,r:'單購上蓋'};return{s:false};}
+function adjP(sku){
+  var u=sku?sku.toUpperCase():'',p=priceDb[sku],inDb=p!==undefined,aj=null;
+  if(u.indexOf('3MR')>=0){var ps=sku.replace(/3MR/g,'STK');if(priceDb[ps]!==undefined){aj='反光→普通';p=priceDb[ps];}}
+  if(u.indexOf('CAR-4VLV')>=0){var ms=sku.replace(/CAR-4VLV/gi,'MC-2VLV');if(priceDb[ms]!==undefined){aj='汽車→機車氣嘴';p=priceDb[ms];}}
+  if(u.indexOf('CAR-KIT')>=0){var ms=sku.replace(/CAR-KIT/gi,'MC-SCR20');if(priceDb[ms]!==undefined){aj='汽車→機車螺絲';p=priceDb[ms];}}
+  if(u.indexOf('X540-X675')>=0){var ms=sku.replace(/X540-X675/gi,'MC-SCR20');if(priceDb[ms]!==undefined){aj='特斯拉→機車';p=priceDb[ms];}}
+  return{p:p||0,aj:aj,inDb:inDb};
+}
+
+function calc(){
+  var mo=document.getElementById('mo').value;sb('計算中...','');
+  var res={},skipped=[];
+  DESIGNERS.forEach(function(d){res[d.name]={items:[],tot:0,sal:0,t10:0,t15:0,t20:0};});
+  function proc(src,oid,dt,sku,nm,qty,fb){
+    if(mo&&dt&&dt.substring(0,7)!==mo)return;
+    var des=getDes(sku,nm);if(!des)return;
+    var sk=doSkip(sku);if(sk.s){skipped.push({r:sk.r});return;}
+    var cp=adjP(sku),useP=cp.inDb?cp.p:(fb||0);
+    if(!useP){skipped.push({r:'找不到定價'});return;}
+    var rt=royRate(useP);if(!rt){skipped.push({r:'定價$'+useP+'低於門檻'});return;}
+    var roy=Math.round(useP*rt*qty),r=res[des];
+    r.items.push({src:src,oid:oid,dt:dt,sku:sku,nm:nm,qty:qty,fb:fb,op:cp.p,useP:useP,aj:cp.aj,inDb:cp.inDb,rt:rt,roy:roy});
+    r.tot+=roy;r.sal+=useP*qty;
+    if(rt===.10)r.t10+=roy;else if(rt===.15)r.t15+=roy;else r.t20+=roy;
+  }
+  sfRows.forEach(function(row){
+    if(row['Financial Status']!=='paid'||row['Fulfillment Status']!=='fulfilled')return;
+    proc('Shopify',row['Name']||'',(row['Paid at']||'').substring(0,10),row['Lineitem sku']||'',row['Lineitem name']||'',parseInt(row['Lineitem quantity']||'1')||1,parseFloat(row['Lineitem price']||'0')||0);
+  });
+  spRows.forEach(function(row){
+    if(row.status!=='已完成')return;if(row.refund&&row.refund.indexOf('退')>=0)return;
+    var qty=row.qty-row.refQty;if(qty<=0)return;proc('蝦皮',row.ordId,row.date,row.sku,row.name,qty,row.price);
+  });
+  aRes={res:res,skipped:skipped,mo:mo};
+  renderRes(res,skipped,mo);
+  document.getElementById('res').className='res on';
+  sb('✓ 完成：'+Object.values(res).reduce(function(a,r){return a+r.items.length;},0)+' 筆 IP 商品'+(mo?' ('+mo+')':''),'ok');
+}
+
+function renderRes(res,skipped,mo){
+  document.getElementById('rt').textContent=mo?mo+' 分潤結果':'分潤結果（全部）';
+  var g=document.getElementById('cards');g.innerHTML='';var grand=0;
+  Object.entries(res).forEach(function(kv){
+    var name=kv[0],data=kv[1];if(!data.items.length)return;grand+=data.tot;
+    var el=document.createElement('div');el.className='card';el.dataset.des=name;
+    el.innerHTML="<div class='cn'>"+name+"</div><div class='ca'>$"+data.tot.toLocaleString()+"</div><div class='cc'>"+data.items.length+" 筆</div>";
+    el.onclick=function(){showDet(name);};g.appendChild(el);
+  });
+  document.getElementById('grand').textContent='$'+grand.toLocaleString();
+  var sk=document.getElementById('skip');
+  if(skipped.length){var gp={};skipped.forEach(function(s){gp[s.r]=(gp[s.r]||0)+1;});sk.innerHTML='排除：'+Object.entries(gp).map(function(e){return e[0]+'（'+e[1]+'筆）';}).join('   ');sk.style.display='block';}
+  else sk.style.display='none';
+  document.getElementById('detail').className='detail';
+}
+
+var currentMode='internal', currentName=null;
+
+function setMode(m){
+  currentMode=m;
+  document.getElementById('mode-internal').classList.toggle('on',m==='internal');
+  document.getElementById('mode-public').classList.toggle('on',m==='public');
+  if(currentName) renderDetail();
+}
+
+function showDet(name){
+  if(!aRes)return;
+  currentName=name;
+  document.querySelectorAll('.card').forEach(function(e){e.classList.toggle('on',e.dataset.des===name);});
+  renderDetail();
+  document.getElementById('detail').className='detail on';
+  document.getElementById('detail').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderDetail(){
+  var name=currentName, data=aRes.res[name], info=DESIGNERS.find(function(d){return d.name===name;})||{ips:[]};
+  document.getElementById('d-name').textContent=name;
+  document.getElementById('d-ips').innerHTML=info.ips.map(function(ip){return"<span class='tag'>"+ip+"</span>";}).join('');
+  document.getElementById('d-amt').textContent='$'+data.tot.toLocaleString();
+
+  if(currentMode==='internal'){
+    document.getElementById('d-meta').textContent=data.items.length+' 筆 / 基準額 $'+data.sal.toLocaleString();
+    var ts=[];
+    if(data.t10)ts.push("<div class='tier'><b>10%</b>$"+data.t10+"</div>");
+    if(data.t15)ts.push("<div class='tier'><b>15%</b>$"+data.t15+"</div>");
+    if(data.t20)ts.push("<div class='tier'><b>20%</b>$"+data.t20+"</div>");
+    document.getElementById('d-tiers').innerHTML=ts.join('');
+    document.getElementById('d-thead').innerHTML='<tr><th>來源</th><th>日期</th><th>SKU</th><th>商品名稱</th><th>數</th><th>官網</th><th>計算</th><th>調整</th><th>率</th><th>分潤</th></tr>';
+    document.getElementById('d-rows').innerHTML=data.items.map(function(it){
+      return "<tr><td>"+it.src+"</td><td>"+it.dt+"</td><td style='max-width:100px;overflow:hidden;text-overflow:ellipsis' title='"+it.sku+"'>"+it.sku+"</td><td style='max-width:130px;overflow:hidden;text-overflow:ellipsis' title='"+it.nm+"'>"+it.nm.substring(0,20)+"</td><td>"+it.qty+"</td><td>"+(it.inDb?it.op:"<span style='color:#ffd700'>"+it.op+"*</span>")+"</td><td class='"+(it.aj?"aj":"")+"'>"+it.useP+"</td><td style='font-size:.62rem;color:#ffd700'>"+((it.aj||"").substring(0,14)||"—")+"</td><td>"+(it.rt*100).toFixed(0)+"%</td><td class='ry'>"+it.roy+"</td></tr>";
+    }).join('');
+  } else {
+    // 對外模式：合併同商品，只顯示產品/數量/分潤
+    var merged={};
+    data.items.forEach(function(it){
+      var key=it.nm;
+      if(!merged[key]) merged[key]={nm:it.nm,qty:0,roy:0};
+      merged[key].qty+=it.qty;
+      merged[key].roy+=it.roy;
+    });
+    var items=Object.values(merged).sort(function(a,b){return b.roy-a.roy;});
+    document.getElementById('d-meta').textContent=items.length+' 項商品';
+    document.getElementById('d-tiers').innerHTML='';
+    document.getElementById('d-thead').innerHTML='<tr><th style="font-size:.78rem">商品名稱</th><th style="font-size:.78rem">售出數量</th><th style="font-size:.78rem">分潤金額</th></tr>';
+    document.getElementById('d-rows').innerHTML=items.map(function(it){
+      return "<tr><td style='font-size:.85rem;white-space:normal' title='"+it.nm+"'>"+it.nm+"</td><td style='font-size:.85rem'>"+it.qty+"</td><td class='ry' style='font-size:.95rem'>$"+it.roy.toLocaleString()+"</td></tr>";
+    }).join('');
+  }
+}
+
+function exportDes(){
+  if(!currentName||!aRes)return;
+  var name=currentName, data=aRes.res[name];
+  var rows;
+  if(currentMode==='public'){
+    var merged={};
+    data.items.forEach(function(it){
+      var key=it.nm;
+      if(!merged[key]) merged[key]={nm:it.nm,qty:0,roy:0};
+      merged[key].qty+=it.qty;
+      merged[key].roy+=it.roy;
+    });
+    var items=Object.values(merged).sort(function(a,b){return b.roy-a.roy;});
+    rows=[["商品名稱","售出數量","分潤金額"]];
+    items.forEach(function(it){
+      rows.push(['"'+it.nm.replace(/"/g,'""')+'"',it.qty,it.roy]);
+    });
+    rows.push(['','總計',data.tot]);
+  } else {
+    rows=[["來源","日期","訂單編號","SKU","商品名稱","數量","來源售價","官網定價","計算定價","調整","費率%","分潤"]];
+    data.items.forEach(function(it){
+      rows.push([it.src,it.dt,it.oid,it.sku,'"'+it.nm.replace(/"/g,'""')+'"',it.qty,it.fb,it.op,it.useP,it.aj||'',(it.rt*100).toFixed(0),it.roy]);
+    });
+  }
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.map(function(r){return r.join(',');}).join('\n')],{type:'text/csv;charset=utf-8'}));
+  a.download='SunBrother_'+name+'_'+(aRes.mo||'ALL')+'_'+currentMode+'.csv';
+  a.click();
+}
+
+function doExport(){
+  if(!aRes)return;var res=aRes.res,mo=aRes.mo;
+  var rows=[["設計師","IP","來源","日期","訂單編號","SKU","商品名稱","數量","來源售價","官網定價","計算定價","調整","費率%","分潤"]];
+  Object.entries(res).forEach(function(kv){var name=kv[0],data=kv[1];var info=DESIGNERS.find(function(d){return d.name===name;})||{ips:[]};data.items.forEach(function(it){rows.push([name,info.ips.join('/'),it.src,it.dt,it.oid,it.sku,'"'+it.nm.replace(/"/g,'""')+'"',it.qty,it.fb,it.op,it.useP,it.aj||'',(it.rt*100).toFixed(0),it.roy]);});});
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.map(function(r){return r.join(',');}).join('\n')],{type:'text/csv;charset=utf-8'}));
+  a.download='SunBrother分潤_'+(mo||'ALL')+'.csv';a.click();
+}
+
+function renderDesTable(){
+  var tb=document.getElementById('des-tbody');tb.innerHTML='';
+  for(var i=0;i<DESIGNERS.length;i++){
+    var d=DESIGNERS[i];
+    var tr=document.createElement('tr');
+    var cells=[
+      "<td><input type='text' value='"+d.name+"' data-i='"+i+"' data-k='name'></td>",
+      "<td><input type='text' value='"+d.ips.join(',')+"' data-i='"+i+"' data-k='ips'></td>",
+      "<td><input type='text' value='"+d.cats.join(',')+"' data-i='"+i+"' data-k='cats'></td>",
+      "<td><input type='text' value='"+(d.old||[]).join(',')+"' data-i='"+i+"' data-k='old'></td>",
+      "<td><button data-del='"+i+"' style='background:#ff3c00;color:#fff;border:none;padding:4px 10px;font-size:.78rem;border-radius:3px;cursor:pointer'>刪除</button></td>"
+    ];
+    tr.innerHTML=cells.join('');
+    tb.appendChild(tr);
+  }
+  // 綁定 input 變更事件
+  tb.querySelectorAll('input[type=text]').forEach(function(inp){
+    inp.addEventListener('change',function(){
+      var i=parseInt(this.dataset.i), k=this.dataset.k, v=this.value;
+      if(k==='name') DESIGNERS[i].name=v.trim();
+      else if(k==='ips') DESIGNERS[i].ips=v.split(',').map(function(s){return s.trim();}).filter(Boolean);
+      else if(k==='cats') DESIGNERS[i].cats=v.split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean);
+      else if(k==='old') DESIGNERS[i].old=v.split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean);
+    });
+  });
+  tb.querySelectorAll('button[data-del]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var i=parseInt(this.dataset.del);
+      if(!confirm('確定刪除「'+DESIGNERS[i].name+'」？'))return;
+      DESIGNERS.splice(i,1);renderDesTable();
+    });
+  });
+}
+
+function addDes(){
+  var name=(document.getElementById('n-name').value||'').trim();
+  if(!name){alert('請填入姓名');return;}
+  DESIGNERS.push({name:name,ips:(document.getElementById('n-ips').value||'').split(',').map(function(s){return s.trim();}).filter(Boolean),cats:(document.getElementById('n-cats').value||'').split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean),old:(document.getElementById('n-old').value||'').split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean)});
+  ['n-name','n-ips','n-cats','n-old'].forEach(function(id){document.getElementById(id).value='';});
+  renderDesTable();alert('✓ 已新增「'+name+'」');
+}
+
+var n=new Date();
+document.getElementById('mo').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');
+</script>
+</body>
+</html>

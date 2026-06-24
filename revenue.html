@@ -307,14 +307,32 @@ function parseLine(l){
   res.push(cur);return res;
 }
 function parseCSV(txt){
-  var ls=txt.replace(/\r/g,'').split('\n'),hdr=parseLine(ls[0]),rows=[];
-  for(var i=1;i<ls.length;i++){
-    if(!ls[i].trim())continue;
-    var v=parseLine(ls[i]),r={};
-    hdr.forEach(function(h,j){r[h.trim()]=(v[j]||'').trim();});
-    rows.push(r);
+  // 逐字解析，跨換行也認得引號（修：備註欄多行內容不再被切爛）
+  txt=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  var rows=[],row=[],cur='',q=false;
+  for(var i=0;i<txt.length;i++){
+    var c=txt[i];
+    if(q){
+      if(c==='"'){ if(txt[i+1]==='"'){cur+='"';i++;} else {q=false;} }
+      else { cur+=c; }
+    }else{
+      if(c==='"'){ q=true; }
+      else if(c===','){ row.push(cur);cur=''; }
+      else if(c==='\n'){ row.push(cur);rows.push(row);row=[];cur=''; }
+      else { cur+=c; }
+    }
   }
-  return rows;
+  if(cur!==''||row.length){ row.push(cur);rows.push(row); }
+  if(!rows.length)return [];
+  var hdr=rows[0].map(function(h){return h.trim();}),out=[];
+  for(var k=1;k<rows.length;k++){
+    var v=rows[k];
+    if(v.length===1&&v[0].trim()==='')continue;
+    var r={};
+    hdr.forEach(function(h,j){r[h]=(v[j]||'').trim();});
+    out.push(r);
+  }
+  return out;
 }
 
 // ── 蝦皮處理 ──
@@ -354,20 +372,22 @@ function processShopee(buf){
 // ── 官網處理 ──
 function processShopify(txt){
   var rows=parseCSV(txt);
-  // 同訂單只取第一筆有 paid 狀態的
+  // 成立訂單全算（含未付款 pending）；取消/退款/voided 交由 filterOrders 排除
   var seen={}, out=[];
   rows.forEach(function(r){
     var name=r['Name']||'';
     if(!name||seen[name])return;
-    if(r['Financial Status']!=='paid')return;
     seen[name]=true;
     var total=parseFloat(r['Total'])||0;
-    // Shopify 手續費需從多筆估算，這裡先用 0（因為原始 CSV 沒有手續費欄位）
-    // 實際是收到 Shopify Payments 後台的另一份報表，目前用 0
+    // Shopify 手續費在另一份 Shopify Payments 報表，暫記 0
     var fee=0;
-    var dt=(r['Paid at']||'').substring(0,10);
+    // 日期基準＝下單日（Created at 已含 +0800，成立即算；非付款日）
+    var dt=(r['Created at']||r['Paid at']||'').substring(0,10);
+    // 狀態帶過；已取消單標記出來，讓 filterOrders 排除
+    var st=r['Financial Status']||'';
+    if((r['Cancelled at']||'').trim()) st='取消';
     out.push({
-      platform:'官網',ordId:name,date:dt,status:r['Financial Status']||'',
+      platform:'官網',ordId:name,date:dt,status:st,
       total:total,fee:fee,net:total-fee
     });
   });

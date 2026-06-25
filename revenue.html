@@ -899,10 +899,30 @@ function exportManual(){
   csvDL('SunBrother手動單.csv',rows);
 }
 
+// ── 自動載入：排程更新 data/ 後，開頁自動抓最新檔（手動上傳保留為備援）──
+function autoLoad(){
+  var bust='?t='+Date.now();
+  fetch('data/shopify.csv'+bust).then(function(r){
+    if(!r.ok)throw 0;return r.text();
+  }).then(function(txt){
+    DATA.sf=processShopify(txt);
+    msg('sf','✓ 自動載入 ('+DATA.sf.length+'筆)','ok');
+    rebuildAll();
+  }).catch(function(){});
+  fetch('data/shopee.xlsx'+bust).then(function(r){
+    if(!r.ok)throw 0;return r.arrayBuffer();
+  }).then(function(buf){
+    DATA.sp=processShopee(new Uint8Array(buf));
+    msg('sp','✓ 自動載入 ('+DATA.sp.length+'筆訂單)','ok');
+    rebuildAll();
+  }).catch(function(){});
+}
+
 // 初始化
 loadManual();
 rebuildAll();
 renderManual();
+autoLoad();
 
 // 預設今天
 var today=new Date().toISOString().substring(0,10);
